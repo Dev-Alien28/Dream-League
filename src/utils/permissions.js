@@ -3,8 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const { SERVERS_DIR } = require('../config/settings');
 
-const OWNER_ID = '878724920987766796'; // Fallback ultime
-
 function initServerConfig(guildId, guildName) {
   fs.mkdirSync(SERVERS_DIR, { recursive: true });
   const configPath = path.join(SERVERS_DIR, `${guildId}.json`);
@@ -17,7 +15,7 @@ function initServerConfig(guildId, guildName) {
       roles: {
         admin: [],      // Rôles pour /addcoins, /removecoins, /setcoins, /give
         moderator: [],  // Rôles modération (si besoin futur)
-        config: []      // ✅ NOUVEAU : Rôles pour accéder à /config
+        config: []      // Rôles pour accéder à /config
       },
       no_coins_channels: [],
       logs_channel: null,
@@ -77,24 +75,20 @@ function getAllowedChannel(guildId, commandName, client) {
 // ==================== PERMISSIONS RÔLES ====================
 
 /**
- * ✅ NOUVELLE FONCTION : Vérifie si un utilisateur peut accéder à /config
+ * Vérifie si un utilisateur peut accéder à /config
  * Hiérarchie :
- * 1. OWNER_ID (fallback ultime)
- * 2. Propriétaire du serveur
- * 3. Rôles "config" configurés
- * 4. Permission Discord "Administrator"
+ * 1. Propriétaire du serveur
+ * 2. Rôles "config" configurés
+ * 3. Permission Discord "Administrator"
  */
 function checkConfigPermission(interaction) {
-  // 1. Fallback ultime : OWNER_ID
-  if (interaction.user.id === OWNER_ID) return true;
-  
-  // 2. Propriétaire du serveur
+  // 1. Propriétaire du serveur
   if (interaction.user.id === interaction.guild?.ownerId) return true;
 
   const guildId = interaction.guildId;
   const config = loadServerConfig(guildId);
 
-  // 3. Rôles "config" configurés
+  // 2. Rôles "config" configurés
   if (config) {
     const configRoles = config.roles?.config || [];
     if (configRoles.length > 0) {
@@ -104,7 +98,7 @@ function checkConfigPermission(interaction) {
     }
   }
 
-  // 4. Permission Discord "Administrator"
+  // 3. Permission Discord "Administrator"
   return interaction.member?.permissions?.has('Administrator') ?? false;
 }
 
@@ -112,8 +106,7 @@ function checkConfigPermission(interaction) {
  * Vérifie les permissions pour les commandes admin (/addcoins, /removecoins, etc.)
  */
 function checkRolePermission(interaction, permissionType) {
-  // Toujours autoriser OWNER_ID et propriétaire du serveur
-  if (interaction.user.id === OWNER_ID) return true;
+  // Propriétaire du serveur
   if (interaction.user.id === interaction.guild?.ownerId) return true;
 
   const guildId = interaction.guildId;
@@ -235,13 +228,12 @@ function isCoinsDisabledChannel(guildId, channelId) {
 }
 
 module.exports = {
-  OWNER_ID,
   initServerConfig,
   loadServerConfig,
   saveServerConfig,
   checkChannelPermission,
   getAllowedChannel,
-  checkConfigPermission,   // ✅ NOUVELLE EXPORT
+  checkConfigPermission,
   checkRolePermission,
   addChannelPermission,
   removeChannelPermission,

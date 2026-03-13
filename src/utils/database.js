@@ -6,6 +6,11 @@ const {
   DATA_DIR, PACKS_DIR, PACKS_CONFIG, MINIGAME_CONFIG, COINS_ON_JOIN,
 } = require('../config/settings');
 
+// ==================== CRÉATION DES DOSSIERS AVANT ENMAP ====================
+
+fs.mkdirSync(path.join(DATA_DIR, 'enmap'), { recursive: true });
+fs.mkdirSync(PACKS_DIR, { recursive: true });
+
 // ==================== ENMAPS ====================
 
 // Enmap pour les données utilisateurs (par guild → par user)

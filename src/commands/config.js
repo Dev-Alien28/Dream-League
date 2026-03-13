@@ -5,7 +5,7 @@ const {
   addChannelPermission, removeChannelPermission, getAllowedChannels,
   addRolePermission, removeRolePermission, getAllowedRoles,
   getNoCoinsChannels, addNoCoinsChannel, removeNoCoinsChannel,
-  checkConfigPermission,  // ✅ NOUVELLE IMPORT
+  checkConfigPermission,
 } = require('../utils/permissions');
 const { getMinigameChannel, getNextMinigameTime } = require('../utils/database');
 const { PSG_BLUE, PSG_RED, PSG_FOOTER_ICON } = require('../config/settings');
@@ -26,7 +26,7 @@ function createMainEmbed(interaction) {
     .addFields(
       { name: '📺 Salons de Commandes', value: 'Configure où `/solde`, `/packs`, `/collection` et le mini-jeu peuvent être utilisés', inline: false },
       { name: '👑 Rôles Administrateurs', value: 'Définis quels rôles peuvent utiliser `/addcoins`, `/removecoins`, `/setcoins`', inline: false },
-      { name: '🔧 Rôles de Configuration', value: 'Définis quels rôles peuvent accéder à `/config`', inline: false },  // ✅ NOUVEAU
+      { name: '🔧 Rôles de Configuration', value: 'Définis quels rôles peuvent accéder à `/config`', inline: false },
       { name: '📋 Salon de Logs', value: 'Définis où le bot enverra les logs du serveur', inline: false },
       { name: '📢 Rappels Automatiques', value: 'Configure les rappels personnalisables', inline: false },
       { name: '🚫 Salons Sans Coins', value: 'Définis les salons où les membres ne gagnent pas de coins', inline: false },
@@ -39,7 +39,7 @@ function createMainComponents() {
     new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('config_channels').setLabel('📺 Salons de Commandes').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId('config_roles').setLabel('👑 Rôles Administrateurs').setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId('config_roles_config').setLabel('🔧 Rôles Config').setStyle(ButtonStyle.Primary),  // ✅ NOUVEAU
+      new ButtonBuilder().setCustomId('config_roles_config').setLabel('🔧 Rôles Config').setStyle(ButtonStyle.Primary),
     ),
     new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('config_logs').setLabel('📋 Salon de Logs').setStyle(ButtonStyle.Primary),
@@ -56,7 +56,6 @@ function createMainComponents() {
 // ==================== COMMANDE PRINCIPALE ====================
 
 async function configCommand(interaction) {
-  // ✅ UTILISE LA NOUVELLE FONCTION
   if (!checkConfigPermission(interaction)) {
     return interaction.reply({
       embeds: [new EmbedBuilder()
@@ -189,7 +188,7 @@ async function handleConfigInteraction(interaction) {
     return interaction.reply({ content: `✅ ${role ? role.name : 'Rôle'} retiré des rôles admin`, flags: MessageFlags.Ephemeral });
   }
 
-  // ==================== ✅ NOUVEAU : RÔLES DE CONFIGURATION ====================
+  // ==================== RÔLES DE CONFIGURATION ====================
   if (customId === 'config_roles_config') {
     const configRoles = getAllowedRoles(guildId, 'config');
     const roleList = configRoles.map(id => guild.roles.cache.get(id)?.toString()).filter(Boolean);
@@ -416,7 +415,6 @@ async function handleConfigInteraction(interaction) {
     const adminRoles = getAllowedRoles(guildId, 'admin').map(id => guild.roles.cache.get(id)?.toString()).filter(Boolean);
     embed.addFields({ name: '👑 Rôles Admin', value: adminRoles.length ? adminRoles.join('\n') : 'Permissions Discord natives 🔧', inline: false });
 
-    // ✅ AFFICHER LES RÔLES CONFIG
     const configRoles = getAllowedRoles(guildId, 'config').map(id => guild.roles.cache.get(id)?.toString()).filter(Boolean);
     embed.addFields({ name: '🔧 Rôles Config', value: configRoles.length ? configRoles.join('\n') : 'Permissions Discord natives 🔧', inline: false });
 
