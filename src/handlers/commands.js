@@ -1,6 +1,5 @@
 // src/handlers/commands.js - Routeur central des slash commands et interactions boutons/menus
 const { MessageFlags } = require('discord.js');
-const { logCommandUse } = require('../utils/logs');
 
 const { soldeCommand } = require('../commands/solde');
 const { packsCommand, buyPack } = require('../commands/packs');
@@ -71,12 +70,8 @@ function setupCommands(client) {
             await interaction.reply({ content: '❌ Commande inconnue.', flags: MessageFlags.Ephemeral });
         }
 
-        // Logger après exécution (non bloquant)
-        logCommandUse(interaction, commandName, true).catch(() => {});
-
       } catch (error) {
         console.error(`❌ Erreur commande /${commandName}:`, error);
-        logCommandUse(interaction, commandName, false, error.message).catch(() => {});
 
         const errMsg = { content: '❌ Une erreur est survenue lors de l\'exécution de cette commande.', flags: MessageFlags.Ephemeral };
         try {
