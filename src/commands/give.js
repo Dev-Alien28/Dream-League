@@ -53,38 +53,6 @@ async function giveCommand(interaction, carteId, membre, raison = null) {
   if (raison) adminEmbed.addFields({ name: '📝 Raison', value: raison, inline: false });
 
   await interaction.reply({ embeds: [adminEmbed], flags: MessageFlags.Ephemeral });
-
-  // Embed pour le membre qui reçoit la carte
-  const typeEmoji = CARD_TYPES[card.type]?.emoji || '🎴';
-  const memberEmbed = new EmbedBuilder()
-    .setTitle('🎁 TU AS REÇU UNE CARTE !')
-    .setDescription(`# 🎴 ${card.nom}\n\nFélicitations ! Un administrateur t'a offert une carte exclusive !`)
-    .setColor(getRarityColor(card.rareté))
-    .addFields(
-      { name: `${typeEmoji} Type`, value: card.type ? card.type.charAt(0).toUpperCase() + card.type.slice(1) : 'Joueur', inline: true },
-      { name: '🏆 Rareté', value: `${getRarityEmoji(card.rareté)} ${card.rareté}`, inline: true },
-      { name: '\u200b', value: '\u200b', inline: true },
-      { name: '📊 Statistiques', value: formatCardStats(card), inline: false },
-      { name: '🎴 Ta collection', value: `${userData.collection.length} cartes`, inline: true },
-    )
-    .setFooter({ text: `Offert par ${interaction.user.displayName} • Paris Saint-Germain`, iconURL: PSG_FOOTER_ICON });
-
-  if (raison) memberEmbed.addFields({ name: '💬 Message', value: raison, inline: false });
-
-  const imageUrl = getCardImageUrl(card) || getRarityCardImage(card.rareté);
-  if (imageUrl) memberEmbed.setImage(imageUrl);
-
-  try {
-    await membre.send({ embeds: [memberEmbed] });
-  } catch {
-    await interaction.followUp({
-      embeds: [new EmbedBuilder()
-        .setTitle('⚠️ Message privé non envoyé')
-        .setDescription(`Je n'ai pas pu envoyer un message privé à ${membre}.\nLa carte a bien été ajoutée à sa collection.`)
-        .setColor(0xFFA500)],
-      flags: MessageFlags.Ephemeral,
-    });
-  }
 }
 
 module.exports = { giveCommand };

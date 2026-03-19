@@ -36,16 +36,6 @@ async function addCoinsCommand(interaction, membre, montant) {
     .setFooter(buildFooter(interaction.guild));
 
   await interaction.reply({ embeds: [embed] });
-
-  try {
-    const notifEmbed = new EmbedBuilder()
-      .setTitle('💰 Tu as reçu des PSG Coins!')
-      .setDescription(`Un administrateur de **${interaction.guild.name}** t'a ajouté **${montant} PSG Coins**!`)
-      .setColor(PSG_BLUE)
-      .addFields({ name: '💎 Nouveau solde', value: `${userData.coins} 🪙`, inline: false })
-      .setFooter(buildFooter(interaction.guild));
-    await membre.send({ embeds: [notifEmbed] });
-  } catch { /* DM désactivés */ }
 }
 
 async function removeCoinsCommand(interaction, membre, montant) {
@@ -89,16 +79,6 @@ async function removeCoinsCommand(interaction, membre, montant) {
     .setFooter(buildFooter(interaction.guild));
 
   await interaction.reply({ embeds: [embed] });
-
-  try {
-    const notifEmbed = new EmbedBuilder()
-      .setTitle('⚠️ Des PSG Coins ont été retirés')
-      .setDescription(`Un administrateur de **${interaction.guild.name}** t'a retiré **${montant} PSG Coins**.`)
-      .setColor(PSG_RED)
-      .addFields({ name: '💎 Nouveau solde', value: `${userData.coins} 🪙`, inline: false })
-      .setFooter(buildFooter(interaction.guild));
-    await membre.send({ embeds: [notifEmbed] });
-  } catch { /* DM désactivés */ }
 }
 
 async function setCoinsCommand(interaction, membre, montant) {
@@ -127,15 +107,6 @@ async function setCoinsCommand(interaction, membre, montant) {
     .setFooter(buildFooter(interaction.guild));
 
   await interaction.reply({ embeds: [embed] });
-
-  try {
-    const notifEmbed = new EmbedBuilder()
-      .setTitle('💰 Ton solde a été modifié')
-      .setDescription(`Un administrateur de **${interaction.guild.name}** a défini ton solde à **${montant} PSG Coins**.`)
-      .setColor(PSG_BLUE)
-      .setFooter(buildFooter(interaction.guild));
-    await membre.send({ embeds: [notifEmbed] });
-  } catch { /* DM désactivés */ }
 }
 
 module.exports = { addCoinsCommand, removeCoinsCommand, setCoinsCommand };

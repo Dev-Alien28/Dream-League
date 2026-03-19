@@ -1,0 +1,27 @@
+[
+    {
+        "id": "joueur_event_001",
+        "type": "joueur",
+        "nom": "Ronaldinho (Légende)",
+        "rareté": "Épique",
+        "position": "Milieu",
+        "stats": {
+            "technique": 99,
+            "intelligence": 95,
+            "controle": 98
+        },
+        "image": "https://example.com/ronaldinho.png"
+    },
+    {
+        "id": "trophee_event_001",
+        "type": "trophee",
+        "nom": "Ligue des Champions 2025",
+        "rareté": "Légendaire",
+        "stats": {
+            "prestige": 100,
+            "difficulte": 95,
+            "annee": 2020
+        },
+        "image": "https://example.com/ucl2020.png"
+    }
+]
