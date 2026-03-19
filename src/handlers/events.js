@@ -1,13 +1,6 @@
 // src/handlers/events.js - Gestion des événements Discord
 const { initFiles, getUserData, saveUserData, getMinigameChannel, getNextMinigameTime } = require('../utils/database');
 const { initServerConfig, isCoinsDisabledChannel } = require('../utils/permissions');
-const {
-  logMemberJoin, logMemberLeave, logMemberUpdate,
-  logMessageDelete, logMessageEdit, logBulkDelete,
-  logVoiceState, logChannelCreate, logChannelDelete, logChannelUpdate,
-  logRoleCreate, logRoleDelete, logRoleUpdate,
-  logGuildUpdate,
-} = require('../utils/logs');
 const { PSG_BLUE, COINS_PER_MESSAGE_INTERVAL, MIN_MESSAGE_LENGTH } = require('../config/settings');
 
 function setupEvents(client) {
@@ -23,7 +16,7 @@ function setupEvents(client) {
     }
 
     try {
-      const {REST, Routes, MessageFlags } = require('discord.js');
+      const { REST, Routes } = require('discord.js');
       const { TOKEN } = require('../config/settings');
       const rest = new REST().setToken(TOKEN);
       const commands = buildCommandsJSON(client);
@@ -68,30 +61,7 @@ function setupEvents(client) {
 
   // ==================== MEMBRES ====================
   client.on('guildMemberAdd', async (member) => {
-    await logMemberJoin(member);
     getUserData(String(member.guild.id), String(member.id)); // init utilisateur
-  });
-
-  client.on('guildMemberRemove', async (member) => {
-    await logMemberLeave(member);
-  });
-
-  client.on('guildMemberUpdate', async (oldMember, newMember) => {
-    await logMemberUpdate(oldMember, newMember);
-  });
-
-  // ==================== MESSAGES ====================
-  client.on('messageDelete', async (message) => {
-    await logMessageDelete(message);
-  });
-
-  client.on('messageUpdate', async (oldMessage, newMessage) => {
-    await logMessageEdit(oldMessage, newMessage);
-  });
-
-  client.on('messageDeleteBulk', async (messages) => {
-    const first = messages.first();
-    if (first) await logBulkDelete(messages, first.channel);
   });
 
   // Système de coins par message
@@ -118,42 +88,6 @@ function setupEvents(client) {
     }
 
     saveUserData(guildId, userId, userData);
-  });
-
-  // ==================== VOCAL ====================
-  client.on('voiceStateUpdate', async (oldState, newState) => {
-    await logVoiceState(newState.member, oldState, newState);
-  });
-
-  // ==================== SALONS ====================
-  client.on('channelCreate', async (channel) => {
-    await logChannelCreate(channel);
-  });
-
-  client.on('channelDelete', async (channel) => {
-    await logChannelDelete(channel);
-  });
-
-  client.on('channelUpdate', async (oldChannel, newChannel) => {
-    await logChannelUpdate(oldChannel, newChannel);
-  });
-
-  // ==================== RÔLES ====================
-  client.on('roleCreate', async (role) => {
-    await logRoleCreate(role);
-  });
-
-  client.on('roleDelete', async (role) => {
-    await logRoleDelete(role);
-  });
-
-  client.on('roleUpdate', async (oldRole, newRole) => {
-    await logRoleUpdate(oldRole, newRole);
-  });
-
-  // ==================== SERVEUR ====================
-  client.on('guildUpdate', async (oldGuild, newGuild) => {
-    await logGuildUpdate(oldGuild, newGuild);
   });
 }
 
