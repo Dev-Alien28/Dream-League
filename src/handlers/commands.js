@@ -1,5 +1,6 @@
 // src/handlers/commands.js - Routeur central des slash commands et interactions boutons/menus
 const { MessageFlags } = require('discord.js');
+const { logCommandUse } = require('../utils/logs');
 
 const { soldeCommand } = require('../commands/solde');
 const { packsCommand, buyPack } = require('../commands/packs');
@@ -70,6 +71,9 @@ function setupCommands(client) {
             await interaction.reply({ content: '❌ Commande inconnue.', flags: MessageFlags.Ephemeral });
         }
 
+        // Log toutes les commandes utilisées
+        logCommandUse(interaction, commandName).catch(() => {});
+
       } catch (error) {
         console.error(`❌ Erreur commande /${commandName}:`, error);
 
@@ -89,10 +93,8 @@ function setupCommands(client) {
       const { customId } = interaction;
 
       try {
-        // Acheter un pack (boutique)
         if (customId.startsWith('buy_pack_')) {
           const parts = customId.split('_');
-          // format: buy_pack_{packKey}_{userId}
           const userId = parts[parts.length - 1];
           if (interaction.user.id !== userId) {
             return interaction.reply({ content: '❌ Tu ne peux pas utiliser cette boutique !\n\nUtilise `/packs` pour ouvrir la tienne.', flags: MessageFlags.Ephemeral });
@@ -102,19 +104,16 @@ function setupCommands(client) {
           return;
         }
 
-        // Mini-jeu
         if (customId.startsWith('minigame_answer_')) {
           await handleMinigameAnswer(interaction);
           return;
         }
 
-        // Collection navigation
         if (customId.startsWith('collection_')) {
           await handleCollectionInteraction(interaction);
           return;
         }
 
-        // Configuration
         if (customId.startsWith('config_')) {
           await handleConfigInteraction(interaction);
           return;
@@ -135,13 +134,11 @@ function setupCommands(client) {
       const { customId } = interaction;
 
       try {
-        // Collection
         if (customId.startsWith('collection_')) {
           await handleCollectionInteraction(interaction);
           return;
         }
 
-        // Configuration
         if (customId.startsWith('config_')) {
           await handleConfigInteraction(interaction);
           return;

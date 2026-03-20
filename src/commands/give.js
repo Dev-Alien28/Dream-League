@@ -1,9 +1,10 @@
 // src/commands/give.js - Commande pour donner des cartes (ADMIN)
-const {EmbedBuilder, MessageFlags } = require('discord.js');
+const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { getUserData, saveUserData, findCardById } = require('../utils/database');
 const { checkRolePermission } = require('../utils/permissions');
-const { PSG_GREEN, PSG_RED, CARD_TYPES, PSG_FOOTER_ICON } = require('../config/settings');
-const { getRarityColor, getRarityEmoji, getRarityCardImage, formatCardStats, getCardImageUrl } = require('../utils/cardHelpers');
+const { PSG_GREEN, PSG_RED, PSG_FOOTER_ICON } = require('../config/settings');
+const { getRarityEmoji } = require('../utils/cardHelpers');
+const { logGiveCard } = require('../utils/logs');
 
 async function giveCommand(interaction, carteId, membre, raison = null) {
   if (!checkRolePermission(interaction, 'admin')) {
@@ -27,7 +28,7 @@ async function giveCommand(interaction, carteId, membre, raison = null) {
         .setTitle('❌ Carte introuvable')
         .setDescription(`Aucune carte trouvée avec l'ID : \`${carteId}\`\n\nVérifie l'ID dans les fichiers JSON du dossier \`data/packs/\``)
         .setColor(PSG_RED)
-        .setFooter({ text: 'Exemple d\'ID valide : gk_donnarumma_basic' })],
+        .setFooter({ text: "Exemple d'ID valide : gk_donnarumma_basic" })],
       flags: MessageFlags.Ephemeral,
     });
   }
@@ -38,7 +39,6 @@ async function giveCommand(interaction, carteId, membre, raison = null) {
   userData.collection.push(card);
   saveUserData(guildId, userId, userData);
 
-  // Embed de confirmation pour l'admin
   const adminEmbed = new EmbedBuilder()
     .setTitle('✅ Carte donnée avec succès !')
     .setDescription(`Tu as donné la carte **${card.nom}** à ${membre}`)
@@ -53,6 +53,7 @@ async function giveCommand(interaction, carteId, membre, raison = null) {
   if (raison) adminEmbed.addFields({ name: '📝 Raison', value: raison, inline: false });
 
   await interaction.reply({ embeds: [adminEmbed], flags: MessageFlags.Ephemeral });
+  logGiveCard(interaction, membre, card, raison).catch(() => {});
 }
 
 module.exports = { giveCommand };

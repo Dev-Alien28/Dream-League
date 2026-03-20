@@ -1,44 +1,35 @@
 // src/utils/permissions.js - Gestion des permissions par serveur
-const fs = require('fs');
-const path = require('path');
 const { SERVERS_DIR } = require('../config/settings');
 
-function initServerConfig(guildId, guildName) {
-  fs.mkdirSync(SERVERS_DIR, { recursive: true });
-  const configPath = path.join(SERVERS_DIR, `${guildId}.json`);
+// ==================== NOTE ====================
+// Les configs serveur sont stockées via Enmap dans database.js
+// On importe loadServerConfig / saveServerConfig depuis database.js
+// pour éviter la double lecture fichier/Enmap.
+const { loadServerConfig, saveServerConfig } = require('./database');
 
-  if (!fs.existsSync(configPath)) {
+// ==================== INIT ====================
+
+function initServerConfig(guildId, guildName) {
+  const existing = loadServerConfig(guildId);
+  if (!existing) {
     const config = {
       guild_id: guildId,
       guild_name: guildName,
       channels: { solde: [], packs: [], collection: [] },
-      roles: {
-        admin: [],      // Rôles pour /addcoins, /removecoins, /setcoins, /give
-        moderator: [],  // Rôles modération (si besoin futur)
-        config: []      // Rôles pour accéder à /config
-      },
+      roles: { admin: [], moderator: [], config: [] },
       no_coins_channels: [],
+      no_coins_categories: [],
       logs_channel: null,
     };
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    saveServerConfig(guildId, config);
     return config;
   }
-
-  return loadServerConfig(guildId);
-}
-
-function loadServerConfig(guildId) {
-  const configPath = path.join(SERVERS_DIR, `${guildId}.json`);
-  if (fs.existsSync(configPath)) {
-    return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  }
-  return null;
-}
-
-function saveServerConfig(guildId, config) {
-  fs.mkdirSync(SERVERS_DIR, { recursive: true });
-  const configPath = path.join(SERVERS_DIR, `${guildId}.json`);
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+  // Migration : ajouter les champs manquants si ancienne config
+  let changed = false;
+  if (!existing.roles?.config) { existing.roles = { ...existing.roles, config: [] }; changed = true; }
+  if (!existing.no_coins_categories) { existing.no_coins_categories = []; changed = true; }
+  if (changed) saveServerConfig(guildId, existing);
+  return existing;
 }
 
 // ==================== PERMISSIONS SALONS ====================
@@ -74,39 +65,24 @@ function getAllowedChannel(guildId, commandName, client) {
 
 // ==================== PERMISSIONS RÔLES ====================
 
-/**
- * Vérifie si un utilisateur peut accéder à /config
- * Hiérarchie :
- * 1. Propriétaire du serveur
- * 2. Rôles "config" configurés
- * 3. Permission Discord "Administrator"
- */
 function checkConfigPermission(interaction) {
-  // 1. Propriétaire du serveur
   if (interaction.user.id === interaction.guild?.ownerId) return true;
 
   const guildId = interaction.guildId;
   const config = loadServerConfig(guildId);
 
-  // 2. Rôles "config" configurés
   if (config) {
     const configRoles = config.roles?.config || [];
     if (configRoles.length > 0) {
       const userRoleIds = interaction.member?.roles?.cache?.map(r => String(r.id)) || [];
-      const hasConfigRole = configRoles.some(roleId => userRoleIds.includes(String(roleId)));
-      if (hasConfigRole) return true;
+      if (configRoles.some(roleId => userRoleIds.includes(String(roleId)))) return true;
     }
   }
 
-  // 3. Permission Discord "Administrator"
   return interaction.member?.permissions?.has('Administrator') ?? false;
 }
 
-/**
- * Vérifie les permissions pour les commandes admin (/addcoins, /removecoins, etc.)
- */
 function checkRolePermission(interaction, permissionType) {
-  // Propriétaire du serveur
   if (interaction.user.id === interaction.guild?.ownerId) return true;
 
   const guildId = interaction.guildId;
@@ -125,9 +101,7 @@ function checkRolePermission(interaction, permissionType) {
   if (!allowedRoles.length) return nativeCheck();
 
   const userRoleIds = interaction.member?.roles?.cache?.map(r => String(r.id)) || [];
-  const hasRole = allowedRoles.some(roleId => userRoleIds.includes(String(roleId)));
-
-  return hasRole || nativeCheck();
+  return allowedRoles.some(roleId => userRoleIds.includes(String(roleId))) || nativeCheck();
 }
 
 // ==================== GESTION SALONS ====================
@@ -223,8 +197,59 @@ function removeNoCoinsChannel(guildId, channelId) {
   return false;
 }
 
-function isCoinsDisabledChannel(guildId, channelId) {
-  return getNoCoinsChannels(guildId).includes(String(channelId));
+// ==================== CATÉGORIES SANS COINS ====================
+
+function getNoCoinsCategories(guildId) {
+  const config = loadServerConfig(guildId);
+  return config?.no_coins_categories || [];
+}
+
+function addNoCoinCategory(guildId, categoryId) {
+  const config = loadServerConfig(guildId);
+  if (!config) return false;
+  if (!config.no_coins_categories) config.no_coins_categories = [];
+  if (!config.no_coins_categories.includes(String(categoryId))) {
+    config.no_coins_categories.push(String(categoryId));
+    saveServerConfig(guildId, config);
+    return true;
+  }
+  return false;
+}
+
+function removeNoCoinCategory(guildId, categoryId) {
+  const config = loadServerConfig(guildId);
+  if (!config) return false;
+  const idx = (config.no_coins_categories || []).indexOf(String(categoryId));
+  if (idx !== -1) {
+    config.no_coins_categories.splice(idx, 1);
+    saveServerConfig(guildId, config);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Vérifie si un salon est désactivé pour les coins.
+ * Tient compte des salons individuels ET des catégories entières.
+ * @param {string} guildId
+ * @param {string} channelId
+ * @param {string|null} parentId - ID de la catégorie parente du salon (channel.parentId)
+ */
+function isCoinsDisabledChannel(guildId, channelId, parentId = null) {
+  const config = loadServerConfig(guildId);
+  if (!config) return false;
+
+  // Vérifier salon individuel
+  const noCoinsChannels = config.no_coins_channels || [];
+  if (noCoinsChannels.includes(String(channelId))) return true;
+
+  // Vérifier catégorie parente
+  if (parentId) {
+    const noCoinsCategories = config.no_coins_categories || [];
+    if (noCoinsCategories.includes(String(parentId))) return true;
+  }
+
+  return false;
 }
 
 module.exports = {
@@ -244,5 +269,8 @@ module.exports = {
   getNoCoinsChannels,
   addNoCoinsChannel,
   removeNoCoinsChannel,
+  getNoCoinsCategories,
+  addNoCoinCategory,
+  removeNoCoinCategory,
   isCoinsDisabledChannel,
 };
