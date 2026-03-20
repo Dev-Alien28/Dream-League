@@ -1,5 +1,5 @@
 // src/commands/packs.js - Boutique de packs avec boutons
-const {EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const {
   getUserData, saveUserData, loadPackCards,
   canClaimFreePack, claimFreePack, getFreePackCooldown,
@@ -7,17 +7,14 @@ const {
 const { checkChannelPermission, getAllowedChannel } = require('../utils/permissions');
 const { PSG_BLUE, PSG_RED, PACKS_CONFIG, CARD_TYPES, PSG_FOOTER_ICON } = require('../config/settings');
 const { getRarityColor, getRarityEmoji, getRarityCardImage, formatCardStats, weightedRandom } = require('../utils/cardHelpers');
+const { logPackPurchase } = require('../utils/logs');
 
 const fs = require('fs');
 const path = require('path');
 
-// ─── Helpers image ────────────────────────────────────────────────────────────
-
-// ✅ __dirname = src/commands/ → '..' remonte à src/ → + imagePath = src/images/cards/Carte_X.png
 function getCardImageFile(card) {
   const imagePath = card.image || '';
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return null;
-
   const absolutePath = path.join(__dirname, '..', imagePath);
   if (imagePath && fs.existsSync(absolutePath)) {
     try {
@@ -38,8 +35,6 @@ function getCardImageUrlLocal(card) {
   }
   return null;
 }
-
-// ─── Commande /packs ──────────────────────────────────────────────────────────
 
 async function packsCommand(interaction) {
   if (!checkChannelPermission(interaction, 'packs')) {
@@ -85,7 +80,6 @@ async function packsCommand(interaction) {
     embed.addFields({ name: `${packInfo.emoji} **${packInfo.nom}**`, value, inline: false });
   }
 
-  // Boutons
   const rows = [];
   let row = new ActionRowBuilder();
   let btnCount = 0;
@@ -106,7 +100,6 @@ async function packsCommand(interaction) {
   }
   if (btnCount > 0) rows.push(row);
 
-  // ✅ Chemin absolu pour Boite.png
   const boitePath = path.join(__dirname, '..', 'images', 'Boite.png');
   const replyOptions = { embeds: [embed], components: rows, flags: MessageFlags.Ephemeral };
 
@@ -118,15 +111,10 @@ async function packsCommand(interaction) {
 
   await interaction.reply(replyOptions);
 
-  // Auto-suppression après 60 secondes
   setTimeout(async () => {
-    try {
-      await interaction.deleteReply();
-    } catch { /* déjà supprimé */ }
+    try { await interaction.deleteReply(); } catch { /* déjà supprimé */ }
   }, 60000);
 }
-
-// ─── Achat d'un pack ──────────────────────────────────────────────────────────
 
 async function buyPack(interaction, packKey) {
   const guildId = interaction.guildId;
@@ -138,72 +126,60 @@ async function buyPack(interaction, packKey) {
     return interaction.reply({ content: '❌ Pack inconnu.', flags: MessageFlags.Ephemeral });
   }
 
-  // ── Pack gratuit ──
   if (packKey === 'free_pack') {
     if (!canClaimFreePack(guildId, userId)) {
       const cooldown = getFreePackCooldown(guildId, userId);
       const hours = Math.floor(cooldown / 3600);
       const minutes = Math.floor((cooldown % 3600) / 60);
       return interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle('⏰ Pack gratuit indisponible')
-            .setDescription(`Tu as déjà réclamé ton pack gratuit !\n\n**Prochain pack dans :** ${hours}h ${minutes}m`)
-            .setColor(PSG_RED)
-            .setFooter({ text: 'Le pack gratuit se recharge toutes les 24 heures' }),
-        ],
+        embeds: [new EmbedBuilder()
+          .setTitle('⏰ Pack gratuit indisponible')
+          .setDescription(`Tu as déjà réclamé ton pack gratuit !\n\n**Prochain pack dans :** ${hours}h ${minutes}m`)
+          .setColor(PSG_RED)
+          .setFooter({ text: 'Le pack gratuit se recharge toutes les 24 heures' })],
         flags: MessageFlags.Ephemeral,
       });
     }
     claimFreePack(guildId, userId);
 
-  // ── Solde insuffisant ──
   } else if (userData.coins < packInfo.prix) {
     return interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('❌ Solde insuffisant')
-          .setDescription("Tu n'as pas assez de PSG Coins pour acheter ce pack !")
-          .setColor(PSG_RED)
-          .addFields(
-            { name: '💰 Prix du pack', value: `${packInfo.prix} 🪙`, inline: true },
-            { name: '💎 Ton solde', value: `${userData.coins} 🪙`, inline: true },
-            { name: '❗ Il te manque', value: `${packInfo.prix - userData.coins} 🪙`, inline: true },
-          )
-          .setFooter({ text: 'Contacte un administrateur pour obtenir des PSG Coins !' }),
-      ],
+      embeds: [new EmbedBuilder()
+        .setTitle('❌ Solde insuffisant')
+        .setDescription("Tu n'as pas assez de PSG Coins pour acheter ce pack !")
+        .setColor(PSG_RED)
+        .addFields(
+          { name: '💰 Prix du pack', value: `${packInfo.prix} 🪙`, inline: true },
+          { name: '💎 Ton solde', value: `${userData.coins} 🪙`, inline: true },
+          { name: '❗ Il te manque', value: `${packInfo.prix - userData.coins} 🪙`, inline: true },
+        )
+        .setFooter({ text: 'Contacte un administrateur pour obtenir des PSG Coins !' })],
       flags: MessageFlags.Ephemeral,
     });
   }
 
-  // ── Charger les cartes ──
   const allCards = loadPackCards(packKey);
   if (!allCards.length) {
     return interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('❌ Erreur')
-          .setDescription('Aucune carte disponible dans ce pack. Contacte un administrateur.')
-          .setColor(PSG_RED),
-      ],
+      embeds: [new EmbedBuilder().setTitle('❌ Erreur').setDescription('Aucune carte disponible dans ce pack. Contacte un administrateur.').setColor(PSG_RED)],
       flags: MessageFlags.Ephemeral,
     });
   }
 
-  // ── Tirage pondéré ──
   const chosenRarity = weightedRandom(packInfo.drop_rates);
   const cardsOfRarity = allCards.filter(c => c.rareté === chosenRarity);
   const card = cardsOfRarity.length
     ? cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)]
     : allCards[Math.floor(Math.random() * allCards.length)];
 
-  // ── Déduire coins & sauvegarder ──
   const freshData = getUserData(guildId, userId);
   if (packKey !== 'free_pack') freshData.coins -= packInfo.prix;
   freshData.collection.push(card);
   saveUserData(guildId, userId, freshData);
 
-  // ── Construire l'embed ──
+  // Log achat
+  logPackPurchase(interaction, packInfo, card, freshData.coins).catch(() => {});
+
   const typeEmoji = CARD_TYPES[card.type]?.emoji || '🎴';
   const embed = new EmbedBuilder()
     .setTitle(`🎁 ${packInfo.emoji} ${packInfo.nom} ouvert !`)
@@ -221,9 +197,7 @@ async function buyPack(interaction, packKey) {
 
   const mentionContent = `🎉 ${interaction.user} a obtenu une carte !`;
 
-  // ── Gestion image : priorité fichier local > URL > thumbnail par rareté ──
   const imageFile = getCardImageFile(card);
-
   if (imageFile) {
     embed.setImage(`attachment://${imageFile.name}`);
     return interaction.reply({ content: mentionContent, embeds: [embed], files: [imageFile] });

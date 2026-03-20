@@ -1,8 +1,9 @@
 // src/commands/admin.js - Commandes admin (addcoins, removecoins, setcoins)
-const {EmbedBuilder, MessageFlags } = require('discord.js');
+const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { getUserData, saveUserData } = require('../utils/database');
 const { checkRolePermission } = require('../utils/permissions');
 const { PSG_BLUE, PSG_RED, PSG_FOOTER_ICON } = require('../config/settings');
+const { logAdminCoins } = require('../utils/logs');
 
 const PSG_LOGO = PSG_FOOTER_ICON;
 
@@ -36,6 +37,7 @@ async function addCoinsCommand(interaction, membre, montant) {
     .setFooter(buildFooter(interaction.guild));
 
   await interaction.reply({ embeds: [embed] });
+  logAdminCoins(interaction, 'add', membre, montant, ancienSolde, userData.coins).catch(() => {});
 }
 
 async function removeCoinsCommand(interaction, membre, montant) {
@@ -79,6 +81,7 @@ async function removeCoinsCommand(interaction, membre, montant) {
     .setFooter(buildFooter(interaction.guild));
 
   await interaction.reply({ embeds: [embed] });
+  logAdminCoins(interaction, 'remove', membre, montant, ancienSolde, userData.coins).catch(() => {});
 }
 
 async function setCoinsCommand(interaction, membre, montant) {
@@ -107,6 +110,7 @@ async function setCoinsCommand(interaction, membre, montant) {
     .setFooter(buildFooter(interaction.guild));
 
   await interaction.reply({ embeds: [embed] });
+  logAdminCoins(interaction, 'set', membre, montant, ancienSolde, montant).catch(() => {});
 }
 
 module.exports = { addCoinsCommand, removeCoinsCommand, setCoinsCommand };

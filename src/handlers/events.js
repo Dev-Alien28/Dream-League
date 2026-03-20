@@ -1,7 +1,7 @@
 // src/handlers/events.js - Gestion des événements Discord
 const { initFiles, getUserData, saveUserData, getMinigameChannel, getNextMinigameTime } = require('../utils/database');
 const { initServerConfig, isCoinsDisabledChannel } = require('../utils/permissions');
-const { PSG_BLUE, COINS_PER_MESSAGE_INTERVAL, MIN_MESSAGE_LENGTH } = require('../config/settings');
+const { COINS_PER_MESSAGE_INTERVAL, MIN_MESSAGE_LENGTH } = require('../config/settings');
 
 function setupEvents(client) {
 
@@ -32,7 +32,7 @@ function setupEvents(client) {
       console.error('❌ Erreur de synchronisation:', e.message);
     }
 
-    // Démarrer la boucle mini-jeu (toutes les minutes)
+    // Boucle mini-jeu (toutes les minutes)
     setInterval(async () => {
       for (const guild of client.guilds.cache.values()) {
         const guildId = String(guild.id);
@@ -64,7 +64,7 @@ function setupEvents(client) {
     getUserData(String(member.guild.id), String(member.id)); // init utilisateur
   });
 
-  // Système de coins par message
+  // ==================== COINS PAR MESSAGE ====================
   client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
     if (!message.guild) return;
@@ -73,8 +73,10 @@ function setupEvents(client) {
     const guildId = String(message.guild.id);
     const userId = String(message.author.id);
     const channelId = String(message.channel.id);
+    const parentId = message.channel.parentId ? String(message.channel.parentId) : null;
 
-    if (isCoinsDisabledChannel(guildId, channelId)) return;
+    // Vérifier salon individuel ET catégorie parente
+    if (isCoinsDisabledChannel(guildId, channelId, parentId)) return;
 
     const clean = message.content.trim();
     if (clean.length < MIN_MESSAGE_LENGTH) return;
@@ -91,7 +93,7 @@ function setupEvents(client) {
   });
 }
 
-// Définitions des slash commands pour la synchronisation API
+// ==================== SLASH COMMANDS JSON ====================
 function buildCommandsJSON() {
   const { ApplicationCommandOptionType } = require('discord.js');
 

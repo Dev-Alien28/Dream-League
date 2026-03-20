@@ -1,9 +1,10 @@
 // src/commands/minigame.js - Mini-jeu Joueur Fuyard
-const {EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { loadPackCards, addCardToUser, getMinigameChannel, setMinigameChannel, scheduleNextMinigame, getNextMinigameTime } = require('../utils/database');
 const { PSG_BLUE, PSG_RED, MINIGAME_CONFIG, PACKS_CONFIG, PSG_FOOTER_ICON } = require('../config/settings');
 const { getRarityEmoji, getCardTypeEmoji, formatCardStats, getCardImageUrl, weightedRandom } = require('../utils/cardHelpers');
-const { OWNER_ID } = require('../utils/permissions');
+const { checkRolePermission } = require('../utils/permissions');
+const { logMinigameWin } = require('../utils/logs');
 
 const PSG_QUESTIONS = [
   { question: "En quelle année le PSG a-t-il été fondé ?", answers: ["1970", "1965", "1975", "1980"], correct: 0 },
@@ -25,8 +26,7 @@ const PSG_QUESTIONS = [
   { question: "En quelle année le PSG a-t-il remporté son premier titre de champion de France ?", answers: ["1986", "1990", "1994", "1998"], correct: 0 },
 ];
 
-// Stockage en mémoire des mini-jeux actifs
-const activeMinigames = new Map(); // guildId → { answered, winner, timeout }
+const activeMinigames = new Map();
 
 async function spawnMinigame(client, guildId) {
   const channelId = getMinigameChannel(guildId);
@@ -61,7 +61,6 @@ async function spawnMinigame(client, guildId) {
   const row = new ActionRowBuilder().addComponents(buttons);
   const message = await channel.send({ embeds: [embed], components: [row] });
 
-  // Initialiser l'état du mini-jeu
   activeMinigames.set(guildId, {
     answered: new Set(),
     winner: null,
@@ -71,12 +70,10 @@ async function spawnMinigame(client, guildId) {
     client,
   });
 
-  // Timeout automatique
   const timeout = setTimeout(async () => {
     const state = activeMinigames.get(guildId);
     if (!state || state.winner) return;
 
-    // Désactiver les boutons
     const disabledButtons = questionData.answers.map((answer, i) =>
       new ButtonBuilder()
         .setCustomId(`minigame_answer_${guildId}_${i}`)
@@ -91,9 +88,7 @@ async function spawnMinigame(client, guildId) {
       .setDescription(`Personne n'a trouvé la bonne réponse à temps !\n\n**✅ Réponse correcte :** ${questionData.answers[questionData.correct]}`)
       .setColor(PSG_RED);
 
-    try {
-      await message.edit({ embeds: [endEmbed], components: [disabledRow] });
-    } catch { /* message supprimé */ }
+    try { await message.edit({ embeds: [endEmbed], components: [disabledRow] }); } catch { /* message supprimé */ }
 
     activeMinigames.delete(guildId);
     scheduleNextMinigame(guildId);
@@ -122,11 +117,9 @@ async function handleMinigameAnswer(interaction) {
       return interaction.reply({ content: `✅ Bonne réponse mais ${state.winner} était plus rapide !`, flags: MessageFlags.Ephemeral });
     }
 
-    // Premier gagnant !
     state.winner = interaction.user;
     clearTimeout(state.timeout);
 
-    // Désactiver les boutons
     const labels = ['A', 'B', 'C', 'D'];
     const disabledButtons = state.questionData.answers.map((answer, i) =>
       new ButtonBuilder()
@@ -138,7 +131,6 @@ async function handleMinigameAnswer(interaction) {
     const disabledRow = new ActionRowBuilder().addComponents(disabledButtons);
     await interaction.update({ components: [disabledRow] });
 
-    // Donner la récompense
     await giveMinigameReward(interaction, guildId, state.questionData);
     activeMinigames.delete(guildId);
     scheduleNextMinigame(guildId);
@@ -161,6 +153,9 @@ async function giveMinigameReward(interaction, guildId, questionData) {
 
   addCardToUser(guildId, interaction.user.id, card);
 
+  // Log victoire mini-jeu
+  logMinigameWin(interaction, card, guildId).catch(() => {});
+
   const embed = new EmbedBuilder()
     .setTitle('🎉 CARTE CAPTURÉE !')
     .setDescription(`**${interaction.user} a gagné la carte !**\n\n# 🎴 ${card.nom}`)
@@ -180,17 +175,16 @@ async function giveMinigameReward(interaction, guildId, questionData) {
     .setDescription(`**${interaction.user} a capturé le joueur fuyard !**\n\nBonne réponse : ${questionData.answers[questionData.correct]}`)
     .setColor(0xFFD700);
 
-  try {
-    await state?.message?.edit({ embeds: [endEmbed] });
-  } catch { /* ok */ }
+  const state = activeMinigames.get(guildId);
+  try { await state?.message?.edit({ embeds: [endEmbed] }); } catch { /* ok */ }
 
   await interaction.followUp({ embeds: [embed] });
 }
 
 async function configMinigameCommand(interaction, salon) {
-  if (interaction.user.id !== OWNER_ID) {
+  if (!checkRolePermission(interaction, 'admin')) {
     return interaction.reply({
-      embeds: [new EmbedBuilder().setTitle('❌ Accès refusé').setDescription('Seul le propriétaire du bot peut utiliser cette commande.').setColor(PSG_RED)],
+      embeds: [new EmbedBuilder().setTitle('❌ Accès refusé').setDescription('Seuls les administrateurs peuvent utiliser cette commande.').setColor(PSG_RED)],
       flags: MessageFlags.Ephemeral,
     });
   }

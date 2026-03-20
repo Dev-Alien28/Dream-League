@@ -129,9 +129,47 @@ async function logMinigameWin(interaction, card, guildId) {
   await safeSend(channel, embed);
 }
 
+// ==================== LOG COMMANDE UTILISÉE ====================
+
+async function logCommandUse(interaction, commandName) {
+  const channel = await getLogsChannel(interaction.guild);
+  if (!channel) return;
+
+  // Récupérer les rôles du membre (les 3 plus hauts hors @everyone)
+  const roles = interaction.member?.roles?.cache
+    ?.filter(r => r.name !== '@everyone')
+    ?.sort((a, b) => b.position - a.position)
+    ?.first(3)
+    ?.map(r => r.toString())
+    ?.join(', ') || 'Aucun rôle';
+
+  // Récupérer les options de la commande si présentes
+  const options = interaction.options?.data || [];
+  const optionsText = options.length
+    ? options.slice(0, 5).map(o => `\`${o.name}\`: ${String(o.value).slice(0, 50)}`).join('\n')
+    : 'Aucun paramètre';
+
+  const embed = new EmbedBuilder()
+    .setTitle(`📋 Commande utilisée : /${commandName}`)
+    .setColor(PSG_BLUE)
+    .addFields(
+      { name: '👤 Utilisateur', value: `${interaction.user} (${interaction.user.displayName})`, inline: true },
+      { name: '📺 Salon', value: interaction.channel?.toString() || 'Inconnu', inline: true },
+      { name: '\u200b', value: '\u200b', inline: true },
+      { name: '🎭 Rôles principaux', value: roles, inline: false },
+      { name: '⚙️ Paramètres', value: optionsText, inline: false },
+    )
+    .setThumbnail(interaction.user.displayAvatarURL())
+    .setFooter({ text: `ID: ${interaction.user.id} • Paris Saint-Germain`, iconURL: PSG_FOOTER_ICON })
+    .setTimestamp();
+
+  await safeSend(channel, embed);
+}
+
 module.exports = {
   logPackPurchase,
   logAdminCoins,
   logGiveCard,
   logMinigameWin,
+  logCommandUse,
 };

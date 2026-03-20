@@ -1,10 +1,11 @@
 // src/commands/config.js - Panneau de configuration interactif
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessageFlags } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ChannelType, MessageFlags } = require('discord.js');
 const {
   loadServerConfig, saveServerConfig,
   addChannelPermission, removeChannelPermission, getAllowedChannels,
   addRolePermission, removeRolePermission, getAllowedRoles,
   getNoCoinsChannels, addNoCoinsChannel, removeNoCoinsChannel,
+  getNoCoinsCategories, addNoCoinCategory, removeNoCoinCategory,
   checkConfigPermission,
 } = require('../utils/permissions');
 const { getMinigameChannel, getNextMinigameTime } = require('../utils/database');
@@ -16,17 +17,10 @@ function formatInterval(hours) {
   return `${Math.floor(hours)} heures`;
 }
 
-// ==================== HELPERS PAGINATION ====================
+// ==================== HELPERS ====================
 
-/**
- * Découpe un tableau en chunks de taille max et retourne
- * un tableau de StringSelectMenuBuilder (un par chunk).
- * @param {Array}  items       - options Discord { label, value, ... }
- * @param {string} baseId      - customId de base ; chaque menu aura baseId_0, baseId_1, …
- * @param {string} placeholder - texte du placeholder
- * @param {number} chunkSize   - max options par menu (≤ 25)
- */
 function buildSelectMenus(items, baseId, placeholder, chunkSize = 25) {
+  if (!items.length) return [];
   const menus = [];
   for (let i = 0; i < items.length; i += chunkSize) {
     const chunk = items.slice(i, i + chunkSize);
@@ -43,7 +37,6 @@ function buildSelectMenus(items, baseId, placeholder, chunkSize = 25) {
   return menus;
 }
 
-/** Transforme une liste de salons texte du serveur en options Discord (max chunkSize par menu). */
 function channelOptions(guild, valuePrefix) {
   return guild.channels.cache
     .filter(c => c.isTextBased() && !c.isThread())
@@ -54,7 +47,15 @@ function channelOptions(guild, valuePrefix) {
     }));
 }
 
-/** Transforme une liste de rôles du serveur en options Discord. */
+function categoryOptions(guild, valuePrefix) {
+  return guild.channels.cache
+    .filter(c => c.type === ChannelType.GuildCategory)
+    .map(c => ({
+      label: `📁 ${c.name}`.slice(0, 100),
+      value: `${valuePrefix}${c.id}`,
+    }));
+}
+
 function roleOptions(guild, valuePrefix) {
   return guild.roles.cache
     .filter(r => r.name !== '@everyone')
@@ -64,18 +65,24 @@ function roleOptions(guild, valuePrefix) {
     }));
 }
 
-/**
- * Construit les ActionRows à partir de plusieurs menus + un bouton retour.
- * Discord limite à 5 ActionRows par message.
- */
-function buildRows(selectMenus, backId, extraButtons = []) {
+/** Jusqu'à 4 rows de sélecteurs + 1 row bouton retour */
+function buildSelectRows(selectMenus, backId, extraButtons = []) {
   const rows = selectMenus.slice(0, 4).map(m => new ActionRowBuilder().addComponents(m));
   const backBtn = new ButtonBuilder().setCustomId(backId).setLabel('⬅️ Retour').setStyle(ButtonStyle.Secondary);
   rows.push(new ActionRowBuilder().addComponents(backBtn, ...extraButtons));
   return rows;
 }
 
-// ==================== EMBEDS ====================
+/** Row avec boutons ➕ Ajouter / ➖ Retirer / ⬅️ Retour */
+function buildActionButtons(addId, removeId, backId, hasItems = true) {
+  return [new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(addId).setLabel('➕ Ajouter').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(removeId).setLabel('➖ Retirer').setStyle(ButtonStyle.Danger).setDisabled(!hasItems),
+    new ButtonBuilder().setCustomId(backId).setLabel('⬅️ Retour').setStyle(ButtonStyle.Secondary),
+  )];
+}
+
+// ==================== MAIN ====================
 
 function createMainEmbed(interaction) {
   return new EmbedBuilder()
@@ -88,7 +95,7 @@ function createMainEmbed(interaction) {
       { name: '🔧 Rôles de Configuration', value: 'Définis quels rôles peuvent accéder à `/config`', inline: false },
       { name: '📋 Salon de Logs', value: 'Définis où le bot enverra ses logs (achats packs, commandes admin, give, mini-jeu)', inline: false },
       { name: '📢 Rappels Automatiques', value: 'Configure les rappels personnalisables', inline: false },
-      { name: '🚫 Salons Sans Coins', value: 'Définis les salons où les membres ne gagnent pas de coins', inline: false },
+      { name: '🚫 Sans Coins', value: 'Définis les salons ou catégories entières où les membres ne gagnent pas de coins', inline: false },
     )
     .setFooter({ text: 'Paris Saint-Germain • Configuration', iconURL: PSG_FOOTER_ICON });
 }
@@ -103,7 +110,7 @@ function createMainComponents() {
     new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('config_logs').setLabel('📋 Salon de Logs').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId('config_reminders').setLabel('📢 Rappels Automatiques').setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId('config_no_coins').setLabel('🚫 Salons Sans Coins').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('config_no_coins').setLabel('🚫 Sans Coins').setStyle(ButtonStyle.Primary),
     ),
     new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('config_view_full').setLabel('📊 Voir Configuration').setStyle(ButtonStyle.Success),
@@ -111,8 +118,6 @@ function createMainComponents() {
     ),
   ];
 }
-
-// ==================== COMMANDE PRINCIPALE ====================
 
 async function configCommand(interaction) {
   if (!checkConfigPermission(interaction)) {
@@ -127,19 +132,17 @@ async function configCommand(interaction) {
   return interaction.reply({ embeds: [createMainEmbed(interaction)], components: createMainComponents(), flags: MessageFlags.Ephemeral });
 }
 
-// ==================== GESTIONNAIRE D'INTERACTIONS CONFIG ====================
+// ==================== HANDLER ====================
 
 async function handleConfigInteraction(interaction) {
   const guildId = interaction.guildId;
   const guild = interaction.guild;
   const customId = interaction.customId;
 
-  // Retour au menu principal
   if (customId === 'config_back_main') {
     return interaction.update({ embeds: [createMainEmbed(interaction)], components: createMainComponents() });
   }
 
-  // Fermer
   if (customId === 'config_close') {
     return interaction.update({
       embeds: [new EmbedBuilder().setTitle('✅ Configuration terminée').setDescription('Tu peux utiliser `/config` à tout moment.').setColor(PSG_BLUE)],
@@ -149,19 +152,23 @@ async function handleConfigInteraction(interaction) {
 
   // ==================== SALONS DE COMMANDES ====================
   if (customId === 'config_channels') {
-    const embed = new EmbedBuilder().setTitle('📺 Configuration des Salons').setDescription('Configure les salons autorisés pour chaque commande.').setColor(PSG_BLUE);
+    const embed = new EmbedBuilder()
+      .setTitle('📺 Salons de Commandes')
+      .setDescription('Choisis une commande pour la configurer.')
+      .setColor(PSG_BLUE);
     for (const cmd of ['solde', 'packs', 'collection', 'minigame']) {
-      const channels = getAllowedChannels(guildId, cmd);
-      const chList = channels.map(id => guild.channels.cache.get(id)?.toString()).filter(Boolean);
-      embed.addFields({ name: `/${cmd}`, value: chList.length ? chList.join('\n') : 'Partout ✅', inline: true });
+      const chs = getAllowedChannels(guildId, cmd).map(id => guild.channels.cache.get(id)?.toString()).filter(Boolean);
+      embed.addFields({ name: `/${cmd}`, value: chs.length ? chs.join('\n') : 'Partout ✅', inline: true });
     }
-    const options = [
-      { label: 'Solde', value: 'solde', emoji: '💰' },
-      { label: 'Packs', value: 'packs', emoji: '📦' },
-      { label: 'Collection', value: 'collection', emoji: '🎴' },
-      { label: 'Mini-jeu', value: 'minigame', emoji: '⚡' },
-    ];
-    const select = new StringSelectMenuBuilder().setCustomId('config_channels_select_cmd').setPlaceholder('Choisir une commande').addOptions(options);
+    const select = new StringSelectMenuBuilder()
+      .setCustomId('config_channels_select_cmd')
+      .setPlaceholder('Choisir une commande à configurer')
+      .addOptions([
+        { label: 'Solde', value: 'solde', emoji: '💰' },
+        { label: 'Packs', value: 'packs', emoji: '📦' },
+        { label: 'Collection', value: 'collection', emoji: '🎴' },
+        { label: 'Mini-jeu', value: 'minigame', emoji: '⚡' },
+      ]);
     return interaction.update({
       embeds: [embed],
       components: [
@@ -176,28 +183,51 @@ async function handleConfigInteraction(interaction) {
     const channels = getAllowedChannels(guildId, cmd);
     const chList = channels.map(id => guild.channels.cache.get(id)?.toString()).filter(Boolean);
     const embed = new EmbedBuilder()
-      .setTitle(`Configuration de /${cmd}`)
-      .setDescription('Ajoute ou retire des salons autorisés.')
+      .setTitle(`📺 Salons pour /${cmd}`)
       .setColor(PSG_BLUE)
-      .addFields({ name: 'Salons actuels', value: chList.length ? chList.join('\n') : 'Partout ✅', inline: false });
+      .addFields({ name: 'Salons configurés', value: chList.length ? chList.join('\n') : 'Partout ✅', inline: false });
+    return interaction.update({
+      embeds: [embed],
+      components: buildActionButtons(`config_ch_add_${cmd}`, `config_ch_rem_${cmd}`, 'config_channels', channels.length > 0),
+    });
+  }
 
-    // Menus d'ajout paginés
-    const addOpts = channelOptions(guild, `${cmd}__add__`);
-    const addMenus = buildSelectMenus(addOpts, 'config_channel_add', '➕ Ajouter un salon');
+  if (customId.startsWith('config_ch_add_')) {
+    const cmd = customId.replace('config_ch_add_', '');
+    const opts = channelOptions(guild, `${cmd}__add__`);
+    const menus = buildSelectMenus(opts, 'config_channel_add', `➕ Salon pour /${cmd}`);
+    if (!menus.length) return interaction.reply({ content: '❌ Aucun salon disponible.', flags: MessageFlags.Ephemeral });
+    const embed = new EmbedBuilder().setTitle(`➕ Ajouter un salon pour /${cmd}`).setColor(PSG_BLUE);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, `config_ch_back_${cmd}`) });
+  }
 
-    // Menus de suppression paginés
+  if (customId.startsWith('config_ch_rem_')) {
+    const cmd = customId.replace('config_ch_rem_', '');
+    const channels = getAllowedChannels(guildId, cmd);
     const removeOpts = channels.map(id => {
       const ch = guild.channels.cache.get(id);
       return ch ? { label: `#${ch.name}`.slice(0, 100), value: `${cmd}__remove__${id}` } : null;
     }).filter(Boolean);
-    const removeMenus = buildSelectMenus(removeOpts, 'config_channel_remove', '➖ Retirer un salon');
-
-    const allMenus = [...addMenus, ...removeMenus];
-    const rows = buildRows(allMenus, 'config_channels');
-    return interaction.update({ embeds: [embed], components: rows });
+    const menus = buildSelectMenus(removeOpts, 'config_channel_remove', `➖ Retirer salon pour /${cmd}`);
+    if (!menus.length) return interaction.reply({ content: '❌ Aucun salon à retirer.', flags: MessageFlags.Ephemeral });
+    const embed = new EmbedBuilder().setTitle(`➖ Retirer un salon pour /${cmd}`).setColor(PSG_RED);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, `config_ch_back_${cmd}`) });
   }
 
-  // Gestion dynamique des menus add/remove salons (customId = config_channel_add_N ou config_channel_remove_N)
+  if (customId.startsWith('config_ch_back_')) {
+    const cmd = customId.replace('config_ch_back_', '');
+    const channels = getAllowedChannels(guildId, cmd);
+    const chList = channels.map(id => guild.channels.cache.get(id)?.toString()).filter(Boolean);
+    const embed = new EmbedBuilder()
+      .setTitle(`📺 Salons pour /${cmd}`)
+      .setColor(PSG_BLUE)
+      .addFields({ name: 'Salons configurés', value: chList.length ? chList.join('\n') : 'Partout ✅', inline: false });
+    return interaction.update({
+      embeds: [embed],
+      components: buildActionButtons(`config_ch_add_${cmd}`, `config_ch_rem_${cmd}`, 'config_channels', channels.length > 0),
+    });
+  }
+
   if (customId.startsWith('config_channel_add_')) {
     const value = interaction.values[0];
     const [cmd, , channelId] = value.split('__');
@@ -210,7 +240,8 @@ async function handleConfigInteraction(interaction) {
     const value = interaction.values[0];
     const [cmd, , channelId] = value.split('__');
     removeChannelPermission(guildId, cmd, channelId);
-    return interaction.reply({ content: `✅ Salon retiré pour \`/${cmd}\``, flags: MessageFlags.Ephemeral });
+    const ch = guild.channels.cache.get(channelId);
+    return interaction.reply({ content: `✅ ${ch ? ch.toString() : 'Salon'} retiré pour \`/${cmd}\``, flags: MessageFlags.Ephemeral });
   }
 
   // ==================== RÔLES ADMIN ====================
@@ -218,22 +249,34 @@ async function handleConfigInteraction(interaction) {
     const adminRoles = getAllowedRoles(guildId, 'admin');
     const roleList = adminRoles.map(id => guild.roles.cache.get(id)?.toString()).filter(Boolean);
     const embed = new EmbedBuilder()
-      .setTitle('👑 Configuration des Rôles Administrateurs')
-      .setDescription('Configure les rôles pouvant utiliser `/addcoins`, `/removecoins`, `/setcoins`, `/give`.')
+      .setTitle('👑 Rôles Administrateurs')
+      .setDescription('Rôles pouvant utiliser `/addcoins`, `/removecoins`, `/setcoins`, `/give`.')
       .setColor(PSG_BLUE)
-      .addFields({ name: 'Rôles Admin actuels', value: roleList.length ? roleList.join('\n') : 'Permissions Discord natives 🔧', inline: false });
+      .addFields({ name: 'Rôles configurés', value: roleList.length ? roleList.join('\n') : 'Permissions Discord natives 🔧', inline: false });
+    return interaction.update({
+      embeds: [embed],
+      components: buildActionButtons('config_roles_add', 'config_roles_rem', 'config_back_main', adminRoles.length > 0),
+    });
+  }
 
-    const addOpts = roleOptions(guild, 'admin__add__');
-    const addMenus = buildSelectMenus(addOpts, 'config_role_add', '➕ Ajouter un rôle admin');
+  if (customId === 'config_roles_add') {
+    const opts = roleOptions(guild, 'admin__add__');
+    const menus = buildSelectMenus(opts, 'config_role_add', '➕ Ajouter un rôle admin');
+    if (!menus.length) return interaction.reply({ content: '❌ Aucun rôle disponible.', flags: MessageFlags.Ephemeral });
+    const embed = new EmbedBuilder().setTitle('➕ Ajouter un rôle administrateur').setColor(PSG_BLUE);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, 'config_roles') });
+  }
 
+  if (customId === 'config_roles_rem') {
+    const adminRoles = getAllowedRoles(guildId, 'admin');
     const removeOpts = adminRoles.map(id => {
       const r = guild.roles.cache.get(id);
       return r ? { label: r.name.slice(0, 100), value: `admin__remove__${id}` } : null;
     }).filter(Boolean);
-    const removeMenus = buildSelectMenus(removeOpts, 'config_role_remove', '➖ Retirer un rôle admin');
-
-    const rows = buildRows([...addMenus, ...removeMenus], 'config_back_main');
-    return interaction.update({ embeds: [embed], components: rows });
+    const menus = buildSelectMenus(removeOpts, 'config_role_remove', '➖ Retirer un rôle admin');
+    if (!menus.length) return interaction.reply({ content: '❌ Aucun rôle à retirer.', flags: MessageFlags.Ephemeral });
+    const embed = new EmbedBuilder().setTitle('➖ Retirer un rôle administrateur').setColor(PSG_RED);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, 'config_roles') });
   }
 
   if (customId.startsWith('config_role_add_')) {
@@ -252,30 +295,42 @@ async function handleConfigInteraction(interaction) {
     return interaction.reply({ content: `✅ ${role ? role.name : 'Rôle'} retiré des rôles admin`, flags: MessageFlags.Ephemeral });
   }
 
-  // ==================== RÔLES DE CONFIGURATION ====================
+  // ==================== RÔLES CONFIG ====================
   if (customId === 'config_roles_config') {
     const configRoles = getAllowedRoles(guildId, 'config');
     const roleList = configRoles.map(id => guild.roles.cache.get(id)?.toString()).filter(Boolean);
     const embed = new EmbedBuilder()
-      .setTitle('🔧 Configuration des Rôles de Configuration')
-      .setDescription('Configure les rôles pouvant accéder à `/config`.\n\n**Par défaut :**\n• Propriétaire du serveur\n• Rôles avec permission "Administrateur"\n\n**Si configuré :**\n• Les rôles listés ci-dessous (sans besoin de la permission Admin)')
+      .setTitle('🔧 Rôles de Configuration')
+      .setDescription('Rôles pouvant accéder à `/config`.\n\n**Par défaut :** Propriétaire + permission Administrateur')
       .setColor(PSG_BLUE)
-      .addFields({ name: 'Rôles Config actuels', value: roleList.length ? roleList.join('\n') : 'Permissions Discord natives 🔧', inline: false });
+      .addFields({ name: 'Rôles configurés', value: roleList.length ? roleList.join('\n') : 'Permissions Discord natives 🔧', inline: false });
+    return interaction.update({
+      embeds: [embed],
+      components: buildActionButtons('config_rolecfg_add', 'config_rolecfg_rem', 'config_back_main', configRoles.length > 0),
+    });
+  }
 
-    const addOpts = roleOptions(guild, 'config__add__');
-    const addMenus = buildSelectMenus(addOpts, 'config_rolecfg_add', '➕ Ajouter un rôle config');
+  if (customId === 'config_rolecfg_add') {
+    const opts = roleOptions(guild, 'config__add__');
+    const menus = buildSelectMenus(opts, 'config_rolecfg_add_sel', '➕ Ajouter un rôle config');
+    if (!menus.length) return interaction.reply({ content: '❌ Aucun rôle disponible.', flags: MessageFlags.Ephemeral });
+    const embed = new EmbedBuilder().setTitle('➕ Ajouter un rôle de configuration').setColor(PSG_BLUE);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, 'config_roles_config') });
+  }
 
+  if (customId === 'config_rolecfg_rem') {
+    const configRoles = getAllowedRoles(guildId, 'config');
     const removeOpts = configRoles.map(id => {
       const r = guild.roles.cache.get(id);
       return r ? { label: r.name.slice(0, 100), value: `config__remove__${id}` } : null;
     }).filter(Boolean);
-    const removeMenus = buildSelectMenus(removeOpts, 'config_rolecfg_remove', '➖ Retirer un rôle config');
-
-    const rows = buildRows([...addMenus, ...removeMenus], 'config_back_main');
-    return interaction.update({ embeds: [embed], components: rows });
+    const menus = buildSelectMenus(removeOpts, 'config_rolecfg_rem_sel', '➖ Retirer un rôle config');
+    if (!menus.length) return interaction.reply({ content: '❌ Aucun rôle à retirer.', flags: MessageFlags.Ephemeral });
+    const embed = new EmbedBuilder().setTitle('➖ Retirer un rôle de configuration').setColor(PSG_RED);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, 'config_roles_config') });
   }
 
-  if (customId.startsWith('config_rolecfg_add_')) {
+  if (customId.startsWith('config_rolecfg_add_sel_')) {
     const value = interaction.values[0];
     const [, , roleId] = value.split('__');
     const role = guild.roles.cache.get(roleId);
@@ -283,7 +338,7 @@ async function handleConfigInteraction(interaction) {
     return interaction.reply({ content: `✅ ${role} peut maintenant utiliser \`/config\``, flags: MessageFlags.Ephemeral });
   }
 
-  if (customId.startsWith('config_rolecfg_remove_')) {
+  if (customId.startsWith('config_rolecfg_rem_sel_')) {
     const value = interaction.values[0];
     const [, , roleId] = value.split('__');
     const role = guild.roles.cache.get(roleId);
@@ -294,21 +349,23 @@ async function handleConfigInteraction(interaction) {
   // ==================== SALON DE LOGS ====================
   if (customId === 'config_logs') {
     const config = loadServerConfig(guildId);
-    const logsChannelId = config?.logs_channel;
-    const logsChannel = logsChannelId ? guild.channels.cache.get(logsChannelId) : null;
-
+    const logsChannel = config?.logs_channel ? guild.channels.cache.get(config.logs_channel) : null;
     const embed = new EmbedBuilder()
-      .setTitle('📋 Configuration du Salon de Logs')
-      .setDescription('Configure le salon qui recevra les logs du bot.\n\n**Logs enregistrés :**\n• 📦 Achats de packs\n• 👑 Commandes admin (addcoins, removecoins, setcoins)\n• 🎁 Cartes données (give)\n• ⚡ Victoires mini-jeu')
+      .setTitle('📋 Salon de Logs')
+      .setDescription('**Logs enregistrés :**\n• 📦 Achats de packs\n• 👑 Commandes admin\n• 🎁 Give\n• ⚡ Mini-jeu')
       .setColor(PSG_BLUE)
       .addFields({ name: 'Salon actuel', value: logsChannel ? logsChannel.toString() : 'Non configuré ❌', inline: false });
+    return interaction.update({
+      embeds: [embed],
+      components: buildActionButtons('config_logs_add', 'config_logs_disable', 'config_back_main', !!logsChannel),
+    });
+  }
 
+  if (customId === 'config_logs_add') {
     const opts = channelOptions(guild, '');
-    const setMenus = buildSelectMenus(opts, 'config_logs_set', 'Définir le salon de logs');
-
-    const disableBtn = new ButtonBuilder().setCustomId('config_logs_disable').setLabel('🗑️ Désactiver').setStyle(ButtonStyle.Danger);
-    const rows = buildRows(setMenus, 'config_back_main', [disableBtn]);
-    return interaction.update({ embeds: [embed], components: rows });
+    const menus = buildSelectMenus(opts, 'config_logs_set', '📋 Choisir le salon de logs');
+    const embed = new EmbedBuilder().setTitle('📋 Choisir le salon de logs').setColor(PSG_BLUE);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, 'config_logs') });
   }
 
   if (customId.startsWith('config_logs_set_')) {
@@ -324,7 +381,7 @@ async function handleConfigInteraction(interaction) {
     const config = loadServerConfig(guildId) || {};
     config.logs_channel = null;
     saveServerConfig(guildId, config);
-    return interaction.reply({ content: '✅ Logs désactivés', flags: MessageFlags.Ephemeral });
+    return interaction.reply({ content: '✅ Salon de logs désactivé', flags: MessageFlags.Ephemeral });
   }
 
   // ==================== RAPPELS AUTOMATIQUES ====================
@@ -338,20 +395,48 @@ async function handleConfigInteraction(interaction) {
     const discChannel = discChannelId ? guild.channels.cache.get(discChannelId) : null;
 
     const embed = new EmbedBuilder()
-      .setTitle('📢 Configuration des Rappels Automatiques')
-      .setDescription('Configure les rappels automatiques.')
+      .setTitle('📢 Rappels Automatiques')
       .setColor(PSG_BLUE)
       .addFields(
-        { name: '📢 Salon de rappels', value: channel ? channel.toString() : 'Non configuré ❌', inline: true },
-        { name: '📊 Statut', value: isEnabled ? '✅ **Activés**' : '❌ **Désactivés**', inline: true },
-        { name: '⏰ Fréquence', value: `Toutes les **${formatInterval(interval)}**`, inline: true },
-        { name: '💬 Salon de discussion', value: discChannel ? discChannel.toString() : 'Message par défaut', inline: false },
+        { name: '📢 Salon', value: channel ? channel.toString() : 'Non configuré ❌', inline: true },
+        { name: '📊 Statut', value: isEnabled ? '✅ Activé' : '❌ Désactivé', inline: true },
+        { name: '⏰ Intervalle', value: formatInterval(interval), inline: true },
+        { name: '💬 Discussion', value: discChannel ? discChannel.toString() : 'Non défini', inline: false },
       );
 
-    const chOpts = channelOptions(guild, '');
-    const reminderMenus = buildSelectMenus(chOpts, 'config_reminder_set_channel', 'Définir le salon de rappels');
-    const discussionMenus = buildSelectMenus(chOpts, 'config_reminder_set_discussion', '💬 Salon de discussion');
+    return interaction.update({
+      embeds: [embed],
+      components: [
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId('config_rem_set_channel').setLabel('📢 Salon rappels').setStyle(ButtonStyle.Primary),
+          new ButtonBuilder().setCustomId('config_rem_set_discussion').setLabel('💬 Salon discussion').setStyle(ButtonStyle.Primary),
+          new ButtonBuilder().setCustomId('config_rem_set_interval').setLabel('⏰ Intervalle').setStyle(ButtonStyle.Primary),
+        ),
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId('config_reminder_enable').setLabel('✅ Activer').setStyle(ButtonStyle.Success),
+          new ButtonBuilder().setCustomId('config_reminder_disable').setLabel('❌ Désactiver').setStyle(ButtonStyle.Danger),
+          new ButtonBuilder().setCustomId('config_reminder_delete').setLabel('🗑️ Supprimer tout').setStyle(ButtonStyle.Danger),
+          new ButtonBuilder().setCustomId('config_back_main').setLabel('⬅️ Retour').setStyle(ButtonStyle.Secondary),
+        ),
+      ],
+    });
+  }
 
+  if (customId === 'config_rem_set_channel') {
+    const opts = channelOptions(guild, '');
+    const menus = buildSelectMenus(opts, 'config_reminder_set_channel', '📢 Salon de rappels');
+    const embed = new EmbedBuilder().setTitle('📢 Choisir le salon de rappels').setColor(PSG_BLUE);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, 'config_reminders') });
+  }
+
+  if (customId === 'config_rem_set_discussion') {
+    const opts = channelOptions(guild, '');
+    const menus = buildSelectMenus(opts, 'config_reminder_set_discussion', '💬 Salon de discussion');
+    const embed = new EmbedBuilder().setTitle('💬 Choisir le salon de discussion').setColor(PSG_BLUE);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, 'config_reminders') });
+  }
+
+  if (customId === 'config_rem_set_interval') {
     const intervalOptions = [
       { label: '1 minute', value: '0.0167', emoji: '⚡' }, { label: '5 minutes', value: '0.0833', emoji: '⚡' },
       { label: '15 minutes', value: '0.25', emoji: '⏱️' }, { label: '30 minutes', value: '0.5', emoji: '⏱️' },
@@ -359,24 +444,15 @@ async function handleConfigInteraction(interaction) {
       { label: '3 heures', value: '3', emoji: '⏰' }, { label: '6 heures (recommandé)', value: '6', emoji: '✅' },
       { label: '12 heures', value: '12', emoji: '⏰' }, { label: '24 heures', value: '24', emoji: '⏰' },
     ];
-    const intervalMenu = new StringSelectMenuBuilder()
-      .setCustomId('config_reminder_set_interval')
-      .setPlaceholder('⏰ Modifier le délai')
-      .addOptions(intervalOptions);
-
-    // On limite à 5 rows max : salon rappel (1) + interval (1) + discussion (1) + boutons (1) = 4
-    const rows = [
-      ...reminderMenus.slice(0, 1).map(m => new ActionRowBuilder().addComponents(m)),
-      new ActionRowBuilder().addComponents(intervalMenu),
-      ...discussionMenus.slice(0, 1).map(m => new ActionRowBuilder().addComponents(m)),
-      new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('config_reminder_enable').setLabel('✅ Activer').setStyle(ButtonStyle.Success),
-        new ButtonBuilder().setCustomId('config_reminder_disable').setLabel('❌ Désactiver').setStyle(ButtonStyle.Danger),
-        new ButtonBuilder().setCustomId('config_reminder_delete').setLabel('🗑️ Supprimer').setStyle(ButtonStyle.Danger),
-        new ButtonBuilder().setCustomId('config_back_main').setLabel('⬅️ Retour').setStyle(ButtonStyle.Secondary),
-      ),
-    ];
-    return interaction.update({ embeds: [embed], components: rows });
+    const menu = new StringSelectMenuBuilder().setCustomId('config_reminder_set_interval').setPlaceholder('⏰ Choisir un intervalle').addOptions(intervalOptions);
+    const embed = new EmbedBuilder().setTitle('⏰ Choisir l\'intervalle').setColor(PSG_BLUE);
+    return interaction.update({
+      embeds: [embed],
+      components: [
+        new ActionRowBuilder().addComponents(menu),
+        new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('config_reminders').setLabel('⬅️ Retour').setStyle(ButtonStyle.Secondary)),
+      ],
+    });
   }
 
   if (customId.startsWith('config_reminder_set_channel_')) {
@@ -384,16 +460,16 @@ async function handleConfigInteraction(interaction) {
     return interaction.reply({ content: '✅ Salon de rappels configuré !', flags: MessageFlags.Ephemeral });
   }
 
-  if (customId === 'config_reminder_set_interval') {
-    const hours = parseFloat(interaction.values[0]);
-    interaction.client.autoReminder?.setInterval(guildId, hours);
-    return interaction.reply({ content: `✅ Intervalle défini à **${formatInterval(hours)}**`, flags: MessageFlags.Ephemeral });
-  }
-
   if (customId.startsWith('config_reminder_set_discussion_')) {
     interaction.client.autoReminder?.setDiscussionChannel(guildId, interaction.values[0]);
     const ch = guild.channels.cache.get(interaction.values[0]);
     return interaction.reply({ content: `✅ Salon de discussion défini : ${ch}`, flags: MessageFlags.Ephemeral });
+  }
+
+  if (customId === 'config_reminder_set_interval') {
+    const hours = parseFloat(interaction.values[0]);
+    interaction.client.autoReminder?.setInterval(guildId, hours);
+    return interaction.reply({ content: `✅ Intervalle défini à **${formatInterval(hours)}**`, flags: MessageFlags.Ephemeral });
   }
 
   if (customId === 'config_reminder_enable') {
@@ -411,30 +487,75 @@ async function handleConfigInteraction(interaction) {
     return interaction.reply({ content: '✅ Configuration des rappels supprimée.', flags: MessageFlags.Ephemeral });
   }
 
-  // ==================== SALONS SANS COINS ====================
+  // ==================== SANS COINS ====================
   if (customId === 'config_no_coins') {
     const noCoins = getNoCoinsChannels(guildId);
+    const noCats = getNoCoinsCategories ? getNoCoinsCategories(guildId) : [];
     const chList = noCoins.map(id => guild.channels.cache.get(id)?.toString()).filter(Boolean);
+    const catList = noCats.map(id => { const c = guild.channels.cache.get(id); return c ? `📁 ${c.name}` : null; }).filter(Boolean);
+
     const embed = new EmbedBuilder()
-      .setTitle('🚫 Configuration des Salons Sans Coins')
-      .setDescription('Configure les salons où les membres ne gagnent **pas** de coins.')
+      .setTitle('🚫 Sans Coins')
+      .setDescription('Salons ou catégories où les membres ne gagnent pas de coins.\nChoisis une action :')
       .setColor(PSG_BLUE)
       .addFields(
-        { name: 'Salons sans coins', value: chList.length ? chList.join('\n') : 'Aucun ✅ (coins gagnés partout)', inline: false },
-        { name: 'ℹ️ Fonctionnement', value: '• Salons **NON listés** : coins gagnés\n• Salons **listés** : aucun coin', inline: false },
+        { name: '📺 Salons', value: chList.length ? chList.join('\n') : 'Aucun ✅', inline: true },
+        { name: '📁 Catégories', value: catList.length ? catList.join('\n') : 'Aucune ✅', inline: true },
       );
 
-    const addOpts = channelOptions(guild, 'nocoins__add__');
-    const addMenus = buildSelectMenus(addOpts, 'config_nocoins_add', '➕ Ajouter salon sans coins');
+    return interaction.update({
+      embeds: [embed],
+      components: [
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId('config_nc_ch_add').setLabel('➕ Salon').setStyle(ButtonStyle.Success),
+          new ButtonBuilder().setCustomId('config_nc_ch_rem').setLabel('➖ Salon').setStyle(ButtonStyle.Danger).setDisabled(noCoins.length === 0),
+          new ButtonBuilder().setCustomId('config_nc_cat_add').setLabel('➕ Catégorie').setStyle(ButtonStyle.Success),
+          new ButtonBuilder().setCustomId('config_nc_cat_rem').setLabel('➖ Catégorie').setStyle(ButtonStyle.Danger).setDisabled(noCats.length === 0),
+        ),
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId('config_back_main').setLabel('⬅️ Retour').setStyle(ButtonStyle.Secondary),
+        ),
+      ],
+    });
+  }
 
+  if (customId === 'config_nc_ch_add') {
+    const opts = channelOptions(guild, 'nocoins__add__');
+    const menus = buildSelectMenus(opts, 'config_nocoins_add', '➕ Salon sans coins');
+    const embed = new EmbedBuilder().setTitle('➕ Ajouter un salon sans coins').setColor(PSG_BLUE);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, 'config_no_coins') });
+  }
+
+  if (customId === 'config_nc_ch_rem') {
+    const noCoins = getNoCoinsChannels(guildId);
     const removeOpts = noCoins.map(id => {
       const ch = guild.channels.cache.get(id);
       return ch ? { label: `#${ch.name}`.slice(0, 100), value: `nocoins__remove__${id}` } : null;
     }).filter(Boolean);
-    const removeMenus = buildSelectMenus(removeOpts, 'config_nocoins_remove', '➖ Retirer salon sans coins');
+    const menus = buildSelectMenus(removeOpts, 'config_nocoins_remove', '➖ Retirer salon sans coins');
+    if (!menus.length) return interaction.reply({ content: '❌ Aucun salon à retirer.', flags: MessageFlags.Ephemeral });
+    const embed = new EmbedBuilder().setTitle('➖ Retirer un salon sans coins').setColor(PSG_RED);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, 'config_no_coins') });
+  }
 
-    const rows = buildRows([...addMenus, ...removeMenus], 'config_back_main');
-    return interaction.update({ embeds: [embed], components: rows });
+  if (customId === 'config_nc_cat_add') {
+    const opts = categoryOptions(guild, 'nocoincat__add__');
+    const menus = buildSelectMenus(opts, 'config_nocoincat_add', '➕ Catégorie sans coins');
+    if (!menus.length) return interaction.reply({ content: '❌ Aucune catégorie disponible.', flags: MessageFlags.Ephemeral });
+    const embed = new EmbedBuilder().setTitle('➕ Ajouter une catégorie sans coins').setColor(PSG_BLUE);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, 'config_no_coins') });
+  }
+
+  if (customId === 'config_nc_cat_rem') {
+    const noCats = getNoCoinsCategories ? getNoCoinsCategories(guildId) : [];
+    const removeOpts = noCats.map(id => {
+      const cat = guild.channels.cache.get(id);
+      return cat ? { label: `📁 ${cat.name}`.slice(0, 100), value: `nocoincat__remove__${id}` } : null;
+    }).filter(Boolean);
+    const menus = buildSelectMenus(removeOpts, 'config_nocoincat_remove', '➖ Retirer catégorie sans coins');
+    if (!menus.length) return interaction.reply({ content: '❌ Aucune catégorie à retirer.', flags: MessageFlags.Ephemeral });
+    const embed = new EmbedBuilder().setTitle('➖ Retirer une catégorie sans coins').setColor(PSG_RED);
+    return interaction.update({ embeds: [embed], components: buildSelectRows(menus, 'config_no_coins') });
   }
 
   if (customId.startsWith('config_nocoins_add_')) {
@@ -442,7 +563,7 @@ async function handleConfigInteraction(interaction) {
     const [, , channelId] = value.split('__');
     const ch = guild.channels.cache.get(channelId);
     addNoCoinsChannel(guildId, channelId);
-    return interaction.reply({ content: `✅ ${ch} ajouté à la liste sans coins`, flags: MessageFlags.Ephemeral });
+    return interaction.reply({ content: `✅ ${ch} ajouté sans coins`, flags: MessageFlags.Ephemeral });
   }
 
   if (customId.startsWith('config_nocoins_remove_')) {
@@ -450,21 +571,36 @@ async function handleConfigInteraction(interaction) {
     const [, , channelId] = value.split('__');
     const ch = guild.channels.cache.get(channelId);
     removeNoCoinsChannel(guildId, channelId);
-    return interaction.reply({ content: `✅ ${ch ? ch.toString() : 'Salon'} retiré de la liste sans coins`, flags: MessageFlags.Ephemeral });
+    return interaction.reply({ content: `✅ ${ch ? ch.toString() : 'Salon'} retiré`, flags: MessageFlags.Ephemeral });
   }
 
-  // ==================== VUE CONFIGURATION COMPLÈTE ====================
+  if (customId.startsWith('config_nocoincat_add_')) {
+    const value = interaction.values[0];
+    const [, , catId] = value.split('__');
+    const cat = guild.channels.cache.get(catId);
+    addNoCoinCategory(guildId, catId);
+    return interaction.reply({ content: `✅ Catégorie **${cat?.name || catId}** ajoutée — tous ses salons sont sans coins`, flags: MessageFlags.Ephemeral });
+  }
+
+  if (customId.startsWith('config_nocoincat_remove_')) {
+    const value = interaction.values[0];
+    const [, , catId] = value.split('__');
+    const cat = guild.channels.cache.get(catId);
+    removeNoCoinCategory(guildId, catId);
+    return interaction.reply({ content: `✅ Catégorie **${cat?.name || catId}** retirée`, flags: MessageFlags.Ephemeral });
+  }
+
+  // ==================== VUE COMPLÈTE ====================
   if (customId === 'config_view_full') {
     const config = loadServerConfig(guildId);
     const embed = new EmbedBuilder()
-      .setTitle(`📊 Configuration Complète - ${guild.name}`)
-      .setDescription('Résumé de toute la configuration actuelle')
+      .setTitle(`📊 Configuration — ${guild.name}`)
       .setColor(PSG_BLUE)
       .setFooter({ text: 'Paris Saint-Germain', iconURL: PSG_FOOTER_ICON });
 
     for (const cmd of ['solde', 'packs', 'collection']) {
       const chs = getAllowedChannels(guildId, cmd).map(id => guild.channels.cache.get(id)?.toString()).filter(Boolean);
-      embed.addFields({ name: `📺 /${cmd}`, value: chs.length ? chs.join('\n') : 'Partout ✅', inline: true });
+      embed.addFields({ name: `📺 /${cmd}`, value: chs.length ? chs.slice(0, 5).join('\n') + (chs.length > 5 ? `\n+${chs.length - 5} autres` : '') : 'Partout ✅', inline: true });
     }
 
     const mgChannelId = getMinigameChannel(guildId);
@@ -473,38 +609,34 @@ async function handleConfigInteraction(interaction) {
       try {
         const nextTime = getNextMinigameTime(guildId);
         embed.addFields({ name: '⚡ Mini-jeu', value: `${mgChannel}\n⏰ <t:${Math.floor(nextTime.getTime() / 1000)}:R>`, inline: true });
-      } catch {
-        embed.addFields({ name: '⚡ Mini-jeu', value: mgChannel.toString(), inline: true });
-      }
+      } catch { embed.addFields({ name: '⚡ Mini-jeu', value: mgChannel.toString(), inline: true }); }
     } else {
       embed.addFields({ name: '⚡ Mini-jeu', value: 'Non configuré ❌', inline: true });
     }
 
     const adminRoles = getAllowedRoles(guildId, 'admin').map(id => guild.roles.cache.get(id)?.toString()).filter(Boolean);
-    embed.addFields({ name: '👑 Rôles Admin', value: adminRoles.length ? adminRoles.join('\n') : 'Permissions Discord natives 🔧', inline: false });
+    embed.addFields({ name: '👑 Rôles Admin', value: adminRoles.length ? adminRoles.slice(0, 5).join('\n') + (adminRoles.length > 5 ? `\n+${adminRoles.length - 5} autres` : '') : 'Permissions Discord 🔧', inline: false });
 
     const configRoles = getAllowedRoles(guildId, 'config').map(id => guild.roles.cache.get(id)?.toString()).filter(Boolean);
-    embed.addFields({ name: '🔧 Rôles Config', value: configRoles.length ? configRoles.join('\n') : 'Permissions Discord natives 🔧', inline: false });
+    embed.addFields({ name: '🔧 Rôles Config', value: configRoles.length ? configRoles.slice(0, 5).join('\n') + (configRoles.length > 5 ? `\n+${configRoles.length - 5} autres` : '') : 'Permissions Discord 🔧', inline: false });
 
-    const logsChannelId = config?.logs_channel;
-    const logsChannel = logsChannelId ? guild.channels.cache.get(logsChannelId) : null;
-    embed.addFields({ name: '📋 Salon de Logs', value: logsChannel ? logsChannel.toString() : 'Non configuré ❌', inline: false });
+    const logsChannel = config?.logs_channel ? guild.channels.cache.get(config.logs_channel) : null;
+    embed.addFields({ name: '📋 Logs', value: logsChannel ? logsChannel.toString() : 'Non configuré ❌', inline: false });
 
     const reminder = interaction.client.autoReminder;
     if (reminder) {
-      const remChId = reminder.getChannelId(guildId);
-      const remCh = remChId ? guild.channels.cache.get(remChId) : null;
-      const isEnabled = reminder.isEnabled(guildId);
-      const interval = reminder.getInterval(guildId);
-      const discChId = reminder.getDiscussionChannelId(guildId);
-      const discCh = discChId ? guild.channels.cache.get(discChId) : null;
-      let remVal = remCh ? `${remCh}\n${isEnabled ? '✅ Activé' : '❌ Désactivé'} • ${formatInterval(interval)}` : 'Non configuré ❌';
+      const remCh = reminder.getChannelId(guildId) ? guild.channels.cache.get(reminder.getChannelId(guildId)) : null;
+      const discCh = reminder.getDiscussionChannelId(guildId) ? guild.channels.cache.get(reminder.getDiscussionChannelId(guildId)) : null;
+      let remVal = remCh ? `${remCh}\n${reminder.isEnabled(guildId) ? '✅ Activé' : '❌ Désactivé'} • ${formatInterval(reminder.getInterval(guildId))}` : 'Non configuré ❌';
       if (discCh) remVal += `\n💬 ${discCh}`;
-      embed.addFields({ name: '📢 Rappels Automatiques', value: remVal, inline: false });
+      embed.addFields({ name: '📢 Rappels', value: remVal, inline: false });
     }
 
     const noCoins = getNoCoinsChannels(guildId).map(id => guild.channels.cache.get(id)?.toString()).filter(Boolean);
-    embed.addFields({ name: '🚫 Salons Sans Coins', value: noCoins.length ? noCoins.join('\n') : 'Aucun (coins partout) ✅', inline: false });
+    embed.addFields({ name: '🚫 Salons', value: noCoins.length ? noCoins.slice(0, 5).join('\n') + (noCoins.length > 5 ? `\n+${noCoins.length - 5} autres` : '') : 'Aucun ✅', inline: true });
+
+    const noCats = getNoCoinsCategories ? getNoCoinsCategories(guildId).map(id => { const c = guild.channels.cache.get(id); return c ? `📁 ${c.name}` : null; }).filter(Boolean) : [];
+    embed.addFields({ name: '📁 Catégories', value: noCats.length ? noCats.slice(0, 5).join('\n') + (noCats.length > 5 ? `\n+${noCats.length - 5} autres` : '') : 'Aucune ✅', inline: true });
 
     return interaction.update({ embeds: [embed], components: createMainComponents() });
   }
