@@ -9,11 +9,32 @@ const {
   deleteReminderConfig,
 } = require('../utils/database');
 
+// ==================== SUIVI D'ACTIVITÉ ====================
+// Map guildId → { lastMessageTime, lastReminderTime }
+const activityTracker = new Map();
+
+function recordActivity(guildId, channelId) {
+  const cfg = getReminderConfig(String(guildId));
+  if (!cfg?.channel_id || cfg.channel_id !== channelId) return;
+  if (!cfg.enabled) return;
+
+  const tracker = activityTracker.get(guildId) || { lastMessageTime: null, lastReminderTime: null };
+  tracker.lastMessageTime = Date.now();
+  activityTracker.set(guildId, tracker);
+}
+
 class AutoReminder {
   constructor(client) {
     this.client = client;
     this._restartFlag = false;
     this._currentTimer = null;
+
+    // Écouter les messages pour tracker l'activité
+    this.client.on('messageCreate', (message) => {
+      if (message.author?.bot) return;
+      if (!message.guild) return;
+      recordActivity(String(message.guild.id), String(message.channel.id));
+    });
   }
 
   // Lecture / écriture via Enmap
@@ -68,6 +89,7 @@ class AutoReminder {
 
   removeReminderChannel(guildId) {
     deleteReminderConfig(String(guildId));
+    activityTracker.delete(guildId);
   }
 
   // ==================== GETTERS ====================
@@ -108,6 +130,25 @@ class AutoReminder {
     }
   }
 
+  // ==================== VÉRIFICATION ACTIVITÉ ====================
+
+  _hasActivitySinceLastReminder(guildId) {
+    const tracker = activityTracker.get(guildId);
+    if (!tracker?.lastMessageTime) return false;
+
+    // S'il n'y a jamais eu de rappel, on vérifie juste qu'il y a eu un message
+    if (!tracker.lastReminderTime) return true;
+
+    // Il y a eu un message APRÈS le dernier rappel
+    return tracker.lastMessageTime > tracker.lastReminderTime;
+  }
+
+  _markReminderSent(guildId) {
+    const tracker = activityTracker.get(guildId) || { lastMessageTime: null, lastReminderTime: null };
+    tracker.lastReminderTime = Date.now();
+    activityTracker.set(guildId, tracker);
+  }
+
   // ==================== ENVOI ====================
 
   async sendReminders() {
@@ -115,6 +156,12 @@ class AutoReminder {
 
     for (const [guildId, settings] of Object.entries(allConfigs)) {
       if (!settings.enabled || !settings.channel_id) continue;
+
+      // ✅ Ne pas envoyer s'il n'y a pas eu d'activité depuis le dernier rappel
+      if (!this._hasActivitySinceLastReminder(guildId)) {
+        console.log(`💤 Pas d'activité sur ${guildId}, rappel ignoré`);
+        continue;
+      }
 
       try {
         const channel = this.client.channels.cache.get(settings.channel_id)
@@ -145,9 +192,10 @@ class AutoReminder {
             + discussionText,
           )
           .setColor(PSG_BLUE)
-          .setFooter({ text: `Ce message apparaît automatiquement toutes les ${intervalLabel}`, iconURL: PSG_FOOTER_ICON });
+          .setFooter({ text: `Ce message apparaît si le salon est actif • toutes les ${intervalLabel}`, iconURL: PSG_FOOTER_ICON });
 
         await channel.send({ embeds: [embed] });
+        this._markReminderSent(guildId);
         console.log(`✅ Rappel envoyé dans ${channel.name} (${guildId})`);
       } catch (e) {
         console.error(`❌ Erreur rappel pour ${guildId}:`, e.message);
@@ -171,7 +219,7 @@ class AutoReminder {
       }
     }
 
-    console.log(`⏰ Prochain rappel dans ${this.formatInterval(minInterval / 3600000)}`);
+    console.log(`⏰ Prochain check rappel dans ${this.formatInterval(minInterval / 3600000)}`);
 
     await new Promise(resolve => {
       this._currentTimer = setTimeout(resolve, minInterval);
