@@ -5,7 +5,7 @@ const { SERVERS_DIR } = require('../config/settings');
 // Les configs serveur sont stockées via Enmap dans database.js
 // On importe loadServerConfig / saveServerConfig depuis database.js
 // pour éviter la double lecture fichier/Enmap.
-const { loadServerConfig, saveServerConfig } = require('./database');
+const { loadServerConfig, saveServerConfig, getPackAnnounceChannel, setPackAnnounceChannel } = require('./database');
 
 // ==================== INIT ====================
 
@@ -256,6 +256,8 @@ module.exports = {
   initServerConfig,
   loadServerConfig,
   saveServerConfig,
+  getPackAnnounceChannel,
+  setPackAnnounceChannel,
   checkChannelPermission,
   getAllowedChannel,
   checkConfigPermission,
