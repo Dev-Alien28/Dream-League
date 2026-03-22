@@ -11,7 +11,6 @@ console.log(`🔑 Token détecté: ${TOKEN.slice(0, 10)}...`);
 
 const { setupEvents } = require('./handlers/events');
 const { setupCommands } = require('./handlers/commands');
-const { setupAutoReminder } = require('./commands/auto_reminder');
 
 // Créer les dossiers nécessaires
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -34,15 +33,11 @@ const client = new Client({
 
 console.log('\n🔴🔵 Initialisation du bot PSG...');
 
-// Setup des événements, commandes et rappels
 setupEvents(client);
 console.log('✅ Événements configurés');
 
 setupCommands(client);
 console.log('✅ Commandes configurées');
-
-setupAutoReminder(client);
-console.log('✅ Système de rappel automatique configuré');
 
 // Connexion
 console.log('\n📋 Connexion à Discord...');
@@ -60,7 +55,6 @@ client.login(TOKEN).catch((error) => {
   process.exit(1);
 });
 
-// Gestion des erreurs non capturées
 process.on('unhandledRejection', (reason, promise) => {
   console.error('⚠️ Rejet non géré:', reason);
 });
