@@ -84,7 +84,7 @@ const CARD_TYPES = {
 const PACKS_CONFIG = {
   psg_start: {
     nom: 'PSG Start',
-    prix: 25,
+    prix: 75,
     description: "Set de base composé des joueurs des saisons 24/25 et 25/26, obtenez des joueurs de la rareté 'Elite' surpuissants comme Hakimi, Dembélé ou Vitinha",
     fichier: 'psg_start.json',
     emoji: '🔴🔵',
