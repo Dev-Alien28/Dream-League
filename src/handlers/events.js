@@ -7,7 +7,7 @@ const { COINS_PER_MESSAGE_INTERVAL, MIN_MESSAGE_LENGTH } = require('../config/se
 // Clé : `${guildId}:${userId}` → { count: number, windowStart: timestamp }
 const coinsRateLimit = new Map();
 
-const COINS_PER_MINUTE_MAX = 3; // coins maximum gagnables par minute
+const COINS_PER_MINUTE_MAX = 4; // coins maximum gagnables par minute
 
 function canEarnCoin(guildId, userId) {
   const key = `${guildId}:${userId}`;
