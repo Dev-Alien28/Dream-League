@@ -53,7 +53,9 @@ async function sendGamingRoomEmbed(channel) {
       + '🗂️ **Collection**\n'
       + 'Observez votre collection complète de cartes\n\n'
       + '🪙 **Portefeuille**\n'
-      + 'Regardez le total des PSG Coins accumulés',
+      + 'Regardez le total des PSG Coins accumulés\n\n'
+      + '──────────────────────────\n'
+      + '💬 **Venez discuter de PSG Dream League dans <#1326910792146354318> !**',
     )
     .setColor(PSG_BLUE)
     .setFooter({ text: 'Paris Saint-Germain • PSG Dream League', iconURL: PSG_FOOTER_ICON });
@@ -149,8 +151,6 @@ async function handleBuyPack(interaction, packKey) {
   const userData = getUserData(guildId, userId);
   const packInfo = PACKS_CONFIG[packKey];
 
-  // Defer immédiatement (éphémère) — évite le timeout Discord de 3s
-  // avant tout await réseau (announceChannel.send, etc.)
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   if (!packInfo) return interaction.editReply({ content: '❌ Pack inconnu.' });
@@ -171,7 +171,7 @@ async function handleBuyPack(interaction, packKey) {
         { name: '💰 Prix du pack', value: `${packInfo.prix} 🪙`, inline: true },
         { name: '💎 Ton solde', value: `${userData.coins} 🪙`, inline: true },
         { name: '❗ Il te manque', value: `${packInfo.prix - userData.coins} 🪙`, inline: true },
-      ).setFooter({ text: 'Contacte un administrateur pour obtenir des PSG Coins !' })],
+      ).setFooter({ text: 'Parlez dans le chat pour gagner des PSG Coins !' })],
     });
   }
 
@@ -191,7 +191,6 @@ async function handleBuyPack(interaction, packKey) {
 
   const typeEmoji = CARD_TYPES[card.type]?.emoji || '🎴';
 
-  // Embed complet — identique dans le message public ET l'éphémère
   function buildCardEmbed() {
     return new EmbedBuilder()
       .setTitle(`🎁 ${packInfo.emoji} ${packInfo.nom} ouvert !`)
@@ -208,11 +207,9 @@ async function handleBuyPack(interaction, packKey) {
       .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON });
   }
 
-  const imageFile = getCardImageFile(card);     // fichier local ou null
-  const cardImageUrl = getCardImageUrlLocal(card); // URL http ou null
+  const imageFile = getCardImageFile(card);
+  const cardImageUrl = getCardImageUrlLocal(card);
 
-  // ── 1. Message public dans le salon d'annonce (si configuré) ───────────────
-  // On l'envoie EN PREMIER pour récupérer l'URL CDN si l'image vient d'un fichier local.
   let cdnImageUrl = cardImageUrl || null;
 
   const announceChannelId = getPackAnnounceChannel(guildId);
@@ -237,7 +234,6 @@ async function handleBuyPack(interaction, packKey) {
     }
   }
 
-  // ── 2. Réponse éphémère au joueur (editReply car on a deferReply au début) ──
   const ephemeralEmbed = buildCardEmbed();
 
   if (cdnImageUrl) {
@@ -432,18 +428,14 @@ async function handleCollectionInteraction(interaction) {
 }
 
 // ─── COMMANDE SLASH /collection ──────────────────────────────────────────────
-// FIX: Utilise config.channels.collection (cohérent avec permissions.js)
-// au lieu de config.collection_channels
 
 async function handleCollectionSlash(interaction, membre = null) {
   const guildId = interaction.guildId;
   const { loadServerConfig } = require('../utils/permissions');
   const config = loadServerConfig(guildId);
 
-  // FIX : lecture depuis config.channels.collection (structure réelle)
   const collectionChannels = config?.channels?.collection || [];
 
-  // Vérification du salon si des salons sont configurés
   if (collectionChannels.length > 0 && !collectionChannels.includes(String(interaction.channelId))) {
     const allowedList = collectionChannels
       .map(id => interaction.guild.channels.cache.get(id)?.toString())

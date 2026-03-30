@@ -3,6 +3,32 @@ const { initFiles, getUserData, saveUserData, getMinigameChannel, getNextMinigam
 const { initServerConfig, isCoinsDisabledChannel } = require('../utils/permissions');
 const { COINS_PER_MESSAGE_INTERVAL, MIN_MESSAGE_LENGTH } = require('../config/settings');
 
+// ─── Anti-spam : limite de coins par minute par utilisateur (par guild) ───────
+// Clé : `${guildId}:${userId}` → { count: number, windowStart: timestamp }
+const coinsRateLimit = new Map();
+
+const COINS_PER_MINUTE_MAX = 3; // coins maximum gagnables par minute
+
+function canEarnCoin(guildId, userId) {
+  const key = `${guildId}:${userId}`;
+  const now = Date.now();
+  const entry = coinsRateLimit.get(key);
+
+  if (!entry || now - entry.windowStart >= 60_000) {
+    // Nouvelle fenêtre d'une minute
+    coinsRateLimit.set(key, { count: 1, windowStart: now });
+    return true;
+  }
+
+  if (entry.count < COINS_PER_MINUTE_MAX) {
+    entry.count++;
+    return true;
+  }
+
+  // Plafond atteint pour cette minute
+  return false;
+}
+
 function setupEvents(client) {
   client.once('clientReady', async () => {
     initFiles();
@@ -19,7 +45,7 @@ function setupEvents(client) {
       console.log(`✅ ${data.length} commande(s) slash synchronisée(s)`);
       console.log('📝 Système de logs activé');
       console.log('⚡ Système de mini-jeu activé');
-      console.log(`🔒 Anti-spam: longueur min = ${MIN_MESSAGE_LENGTH} caractères`);
+      console.log(`🔒 Anti-spam: longueur min = ${MIN_MESSAGE_LENGTH} caractères, max ${COINS_PER_MINUTE_MAX} coins/minute`);
     } catch (e) {
       console.error('❌ Erreur de synchronisation:', e.message);
     }
@@ -54,19 +80,31 @@ function setupEvents(client) {
     if (message.author.bot) return;
     if (!message.guild) return;
     if (message.content.startsWith('/')) return;
+
     const guildId = String(message.guild.id);
     const userId = String(message.author.id);
     const channelId = String(message.channel.id);
     const parentId = message.channel.parentId ? String(message.channel.parentId) : null;
+
     if (isCoinsDisabledChannel(guildId, channelId, parentId)) return;
+
     const clean = message.content.trim();
     if (clean.length < MIN_MESSAGE_LENGTH) return;
+
     const userData = getUserData(guildId, userId);
     userData.messages++;
+
+    // Gagner 1 coin tous les COINS_PER_MESSAGE_INTERVAL messages,
+    // dans la limite de COINS_PER_MINUTE_MAX coins par minute
     if (userData.messages % COINS_PER_MESSAGE_INTERVAL === 0) {
-      userData.coins++;
-      console.log(`💰 ${message.author.username} a gagné 1 coin sur ${message.guild.name}`);
+      if (canEarnCoin(guildId, userId)) {
+        userData.coins++;
+        console.log(`💰 ${message.author.username} a gagné 1 coin sur ${message.guild.name}`);
+      } else {
+        console.log(`🚫 ${message.author.username} a atteint la limite de ${COINS_PER_MINUTE_MAX} coins/min sur ${message.guild.name}`);
+      }
     }
+
     saveUserData(guildId, userId, userData);
   });
 }
