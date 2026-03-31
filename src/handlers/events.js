@@ -1,5 +1,6 @@
 // src/handlers/events.js - Gestion des événements Discord
-const { initFiles, getUserData, saveUserData, getMinigameChannel, getNextMinigameTime } = require('../utils/database');
+const { initFiles, getUserData, saveUserData, getMinigameChannel, getNextMinigameTime, users, events } = require('../utils/database');
+const { runMigrations } = require('../utils/migrate_names');
 const { initServerConfig, isCoinsDisabledChannel } = require('../utils/permissions');
 const { COINS_PER_MESSAGE_INTERVAL, MIN_MESSAGE_LENGTH } = require('../config/settings');
 
@@ -32,6 +33,7 @@ function canEarnCoin(guildId, userId) {
 function setupEvents(client) {
   client.once('clientReady', async () => {
     initFiles();
+    await runMigrations(users, events);
     console.log(`🔴🔵 Bot PSG connecté en tant que ${client.user.tag}`);
     console.log(`📊 Serveurs : ${client.guilds.cache.size}`);
     for (const guild of client.guilds.cache.values()) {
