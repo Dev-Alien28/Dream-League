@@ -20,7 +20,7 @@
   {
     "id": "gk_safonov_basic",
     "type": "joueur",
-    "nom": "Matvey Safonov 25/26",
+    "nom": "Matveï Safonov 25/26",
     "rareté": "Basic",
     "position": "Gardien",
     "stats": {"physique": 77, "agilité": 76, "arrêt": 78},
@@ -65,7 +65,7 @@
   {
     "id": "gk_safonov_adv",
     "type": "joueur",
-    "nom": "Matvey Safonov 25/26",
+    "nom": "Matveï Safonov 25/26",
     "rareté": "Advanced",
     "position": "Gardien",
     "stats": {"physique": 80, "agilité": 79, "arrêt": 81},
@@ -110,7 +110,7 @@
   {
     "id": "gk_safonov_elite",
     "type": "joueur",
-    "nom": "Matvey Safonov 25/26",
+    "nom": "Matveï Safonov 25/26",
     "rareté": "Elite",
     "position": "Gardien",
     "stats": {"physique": 83, "agilité": 82, "arrêt": 84},
@@ -173,7 +173,7 @@
   {
     "id": "def_zabarnyi_basic",
     "type": "joueur",
-    "nom": "Illia Zabarnyi 25/26 Away",
+    "nom": "Illya Zabarnyi 25/26 Away",
     "rareté": "Basic",
     "position": "Défenseur",
     "stats": {"intelligence": 76, "pression": 77, "physique": 79},
@@ -272,7 +272,7 @@
   {
     "id": "def_zabarnyi_adv",
     "type": "joueur",
-    "nom": "Illia Zabarnyi 25/26 Away",
+    "nom": "Illya Zabarnyi 25/26 Away",
     "rareté": "Advanced",
     "position": "Défenseur",
     "stats": {"intelligence": 79, "pression": 80, "physique": 82},
@@ -371,7 +371,7 @@
   {
     "id": "def_zabarnyi_elite",
     "type": "joueur",
-    "nom": "Illia Zabarnyi 25/26 Away",
+    "nom": "Illya Zabarnyi 25/26 Away",
     "rareté": "Elite",
     "position": "Défenseur",
     "stats": {"intelligence": 82, "pression": 83, "physique": 85},
