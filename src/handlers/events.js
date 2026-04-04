@@ -5,10 +5,8 @@ const { initServerConfig, isCoinsDisabledChannel } = require('../utils/permissio
 const { COINS_PER_MESSAGE_INTERVAL, MIN_MESSAGE_LENGTH } = require('../config/settings');
 
 // ─── Anti-spam : limite de coins par minute par utilisateur (par guild) ───────
-// Clé : `${guildId}:${userId}` → { count: number, windowStart: timestamp }
 const coinsRateLimit = new Map();
-
-const COINS_PER_MINUTE_MAX = 4; // coins maximum gagnables par minute
+const COINS_PER_MINUTE_MAX = 4;
 
 function canEarnCoin(guildId, userId) {
   const key = `${guildId}:${userId}`;
@@ -16,17 +14,13 @@ function canEarnCoin(guildId, userId) {
   const entry = coinsRateLimit.get(key);
 
   if (!entry || now - entry.windowStart >= 60_000) {
-    // Nouvelle fenêtre d'une minute
     coinsRateLimit.set(key, { count: 1, windowStart: now });
     return true;
   }
-
   if (entry.count < COINS_PER_MINUTE_MAX) {
     entry.count++;
     return true;
   }
-
-  // Plafond atteint pour cette minute
   return false;
 }
 
@@ -96,8 +90,6 @@ function setupEvents(client) {
     const userData = getUserData(guildId, userId);
     userData.messages++;
 
-    // Gagner 1 coin tous les COINS_PER_MESSAGE_INTERVAL messages,
-    // dans la limite de COINS_PER_MINUTE_MAX coins par minute
     if (userData.messages % COINS_PER_MESSAGE_INTERVAL === 0) {
       if (canEarnCoin(guildId, userId)) {
         userData.coins++;
@@ -117,7 +109,7 @@ function buildCommandsJSON() {
     {
       name: 'addcoins',
       description: '[ADMIN] Ajouter des PSG Coins à un membre',
-      default_member_permissions: '0', // ❌ Caché pour les membres
+      default_member_permissions: '0',
       options: [
         { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
         { name: 'montant', description: 'Montant', type: ApplicationCommandOptionType.Integer, required: true },
@@ -126,7 +118,7 @@ function buildCommandsJSON() {
     {
       name: 'removecoins',
       description: '[ADMIN] Retirer des PSG Coins à un membre',
-      default_member_permissions: '0', // ❌ Caché pour les membres
+      default_member_permissions: '0',
       options: [
         { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
         { name: 'montant', description: 'Montant', type: ApplicationCommandOptionType.Integer, required: true },
@@ -135,7 +127,7 @@ function buildCommandsJSON() {
     {
       name: 'setcoins',
       description: '[ADMIN] Définir le solde exact d\'un membre',
-      default_member_permissions: '0', // ❌ Caché pour les membres
+      default_member_permissions: '0',
       options: [
         { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
         { name: 'montant', description: 'Nouveau solde', type: ApplicationCommandOptionType.Integer, required: true },
@@ -144,7 +136,7 @@ function buildCommandsJSON() {
     {
       name: 'give',
       description: '[ADMIN] Donner une carte à un membre',
-      default_member_permissions: '0', // ❌ Caché pour les membres
+      default_member_permissions: '0',
       options: [
         { name: 'carte_id', description: "L'ID de la carte", type: ApplicationCommandOptionType.String, required: true },
         { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
@@ -154,16 +146,7 @@ function buildCommandsJSON() {
     {
       name: 'config',
       description: '[ADMIN] Configurer le bot de manière interactive',
-      default_member_permissions: '0', // ❌ Caché pour les membres
-    },
-    {
-      name: 'collection',
-      description: 'Voir la collection de cartes d\'un membre',
-      // ✅ Pas de default_member_permissions → visible par tout le monde
-      // Les admins PSG peuvent l'activer pour @everyone dans Paramètres → Intégrations
-      options: [
-        { name: 'membre', description: '(Optionnel) Le membre dont tu veux voir la collection', type: ApplicationCommandOptionType.User, required: false },
-      ],
+      default_member_permissions: '0',
     },
   ];
 }

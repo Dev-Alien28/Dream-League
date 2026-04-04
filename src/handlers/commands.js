@@ -11,7 +11,6 @@ const {
   handleBuyPack,
   handlePortefeuille,
   handleCollection,
-  handleCollectionSlash,
   handleCollectionInteraction,
 } = require('../commands/gaming_room');
 
@@ -53,11 +52,6 @@ function setupCommands(client) {
           case 'config':
             await configCommand(interaction);
             break;
-          case 'collection': {
-            const membre = interaction.options.getMember('membre') || null;
-            await handleCollectionSlash(interaction, membre);
-            break;
-          }
           default:
             await interaction.reply({ content: '❌ Commande inconnue.', flags: MessageFlags.Ephemeral });
         }
@@ -79,18 +73,30 @@ function setupCommands(client) {
       const { customId } = interaction;
 
       try {
-        if (customId === 'gr_boosters') { await handleBoosters(interaction); return; }
-        if (customId === 'gr_collection') { await handleCollection(interaction); return; }
+        if (customId === 'gr_boosters')     { await handleBoosters(interaction); return; }
+        if (customId === 'gr_collection')   { await handleCollection(interaction); return; }
         if (customId === 'gr_portefeuille') { await handlePortefeuille(interaction); return; }
 
         if (customId.startsWith('gr_buy_pack_')) {
           const parts = customId.split('_');
           const userId = parts[parts.length - 1];
           if (interaction.user.id !== userId) {
-            return interaction.reply({ content: '❌ Ouvre ta propre boutique en cliquant sur **Les Boosters** !', flags: MessageFlags.Ephemeral });
+            return interaction.reply({
+              content: '❌ Ouvre ta propre boutique en cliquant sur **Les Boosters** !',
+              flags: MessageFlags.Ephemeral,
+            });
           }
           const packKey = parts.slice(3, parts.length - 1).join('_');
-          await handleBuyPack(interaction, packKey);
+          try {
+            await handleBuyPack(interaction, packKey);
+          } catch (buyError) {
+            // Timeout réseau Discord : la transaction DB est déjà faite, on log et on passe
+            if (buyError.code === 'UND_ERR_CONNECT_TIMEOUT' || buyError.name === 'ConnectTimeoutError') {
+              console.error(`⚠️ Timeout réseau achat pack (${packKey}) pour ${userId}`);
+            } else {
+              console.error(`❌ Erreur achat pack (${packKey}):`, buyError);
+            }
+          }
           return;
         }
 
@@ -113,11 +119,28 @@ function setupCommands(client) {
       const { customId } = interaction;
 
       try {
-        if (customId.startsWith('gr_coll_')) { await handleCollectionInteraction(interaction); return; }
-        if (customId.startsWith('config_')) { await handleConfigInteraction(interaction); return; }
+        if (customId.startsWith('gr_coll_'))  { await handleCollectionInteraction(interaction); return; }
+        if (customId.startsWith('config_'))   { await handleConfigInteraction(interaction); return; }
 
       } catch (error) {
         console.error(`❌ Erreur select menu ${interaction.customId}:`, error);
+        try {
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ content: '❌ Une erreur est survenue.', flags: MessageFlags.Ephemeral });
+          }
+        } catch { /* ok */ }
+      }
+    }
+
+    // ==================== USER SELECT MENU ====================
+    else if (interaction.isUserSelectMenu()) {
+      const { customId } = interaction;
+
+      try {
+        if (customId.startsWith('gr_coll_user_select_')) { await handleCollectionInteraction(interaction); return; }
+
+      } catch (error) {
+        console.error(`❌ Erreur user select menu ${interaction.customId}:`, error);
         try {
           if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ content: '❌ Une erreur est survenue.', flags: MessageFlags.Ephemeral });
