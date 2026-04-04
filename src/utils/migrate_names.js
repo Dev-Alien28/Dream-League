@@ -30,18 +30,17 @@ async function runMigrations(users, events) {
   let totalUsersPatched = 0;
 
   try {
-    await users.fetchEverything();
+    // ✅ Enmap expose ses clés via .keys() — on itère dessus
+    const allKeys = [...users.keys()];
+    console.log(`   📊 ${allKeys.length} entrée(s) utilisateur à analyser`);
 
-    const allEntries = [...users.entries()];
-    console.log(`   📊 ${allEntries.length} entrée(s) utilisateur à analyser`);
-
-    for (const [key, userData] of allEntries) {
-      if (!Array.isArray(userData.collection) || userData.collection.length === 0) continue;
+    for (const key of allKeys) {
+      const userData = users.get(key);
+      if (!userData || !Array.isArray(userData.collection) || userData.collection.length === 0) continue;
 
       let userPatched = false;
 
       userData.collection = userData.collection.map(card => {
-        // Correction par ID (méthode fiable)
         if (card.id && ID_NAME_FIXES[card.id]) {
           const bonNom = ID_NAME_FIXES[card.id];
           if (card.nom !== bonNom) {

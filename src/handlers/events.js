@@ -114,15 +114,56 @@ function setupEvents(client) {
 function buildCommandsJSON() {
   const { ApplicationCommandOptionType } = require('discord.js');
   return [
-    { name: 'addcoins', description: '[ADMIN] Ajouter des PSG Coins à un membre', options: [{ name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true }, { name: 'montant', description: 'Montant', type: ApplicationCommandOptionType.Integer, required: true }] },
-    { name: 'removecoins', description: '[ADMIN] Retirer des PSG Coins à un membre', options: [{ name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true }, { name: 'montant', description: 'Montant', type: ApplicationCommandOptionType.Integer, required: true }] },
-    { name: 'setcoins', description: '[ADMIN] Définir le solde exact d\'un membre', options: [{ name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true }, { name: 'montant', description: 'Nouveau solde', type: ApplicationCommandOptionType.Integer, required: true }] },
-    { name: 'give', description: '[ADMIN] Donner une carte à un membre', options: [{ name: 'carte_id', description: "L'ID de la carte", type: ApplicationCommandOptionType.String, required: true }, { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true }, { name: 'raison', description: 'Raison (optionnel)', type: ApplicationCommandOptionType.String, required: false }] },
-    { name: 'config', description: '[ADMIN] Configurer le bot de manière interactive' },
+    {
+      name: 'addcoins',
+      description: '[ADMIN] Ajouter des PSG Coins à un membre',
+      default_member_permissions: '0', // ❌ Caché pour les membres
+      options: [
+        { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
+        { name: 'montant', description: 'Montant', type: ApplicationCommandOptionType.Integer, required: true },
+      ],
+    },
+    {
+      name: 'removecoins',
+      description: '[ADMIN] Retirer des PSG Coins à un membre',
+      default_member_permissions: '0', // ❌ Caché pour les membres
+      options: [
+        { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
+        { name: 'montant', description: 'Montant', type: ApplicationCommandOptionType.Integer, required: true },
+      ],
+    },
+    {
+      name: 'setcoins',
+      description: '[ADMIN] Définir le solde exact d\'un membre',
+      default_member_permissions: '0', // ❌ Caché pour les membres
+      options: [
+        { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
+        { name: 'montant', description: 'Nouveau solde', type: ApplicationCommandOptionType.Integer, required: true },
+      ],
+    },
+    {
+      name: 'give',
+      description: '[ADMIN] Donner une carte à un membre',
+      default_member_permissions: '0', // ❌ Caché pour les membres
+      options: [
+        { name: 'carte_id', description: "L'ID de la carte", type: ApplicationCommandOptionType.String, required: true },
+        { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
+        { name: 'raison', description: 'Raison (optionnel)', type: ApplicationCommandOptionType.String, required: false },
+      ],
+    },
+    {
+      name: 'config',
+      description: '[ADMIN] Configurer le bot de manière interactive',
+      default_member_permissions: '0', // ❌ Caché pour les membres
+    },
     {
       name: 'collection',
       description: 'Voir la collection de cartes d\'un membre',
-      options: [{ name: 'membre', description: '(Optionnel) Le membre dont tu veux voir la collection', type: ApplicationCommandOptionType.User, required: false }],
+      // ✅ Pas de default_member_permissions → visible par tout le monde
+      // Les admins PSG peuvent l'activer pour @everyone dans Paramètres → Intégrations
+      options: [
+        { name: 'membre', description: '(Optionnel) Le membre dont tu veux voir la collection', type: ApplicationCommandOptionType.User, required: false },
+      ],
     },
   ];
 }
