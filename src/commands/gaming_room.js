@@ -18,8 +18,13 @@ const fs = require('fs');
 const path = require('path');
 
 // ─── Lock anti-double-achat ────────────────────────────────────────────────────
-// Clé : `${guildId}:${userId}` → true pendant qu'un achat est en cours
 const buyLocks = new Set();
+
+// ─── Helper accord carte/cartes ───────────────────────────────────────────────
+
+function pluralCartes(n) {
+  return `${n} carte${n > 1 ? 's' : ''}`;
+}
 
 // ─── Helpers image ────────────────────────────────────────────────────────────
 
@@ -55,9 +60,7 @@ async function sendGamingRoomEmbed(channel) {
       + '🎴 **Boutique PSG Dream League**\n'
       + 'Retrouvez tous les boosters de cartes afin de composer votre équipe de rêve !\n\n'
       + '🗂️ **Collection**\n'
-      + 'Observez votre collection complète de cartes\n\n'
-      + '🪙 **Portefeuille**\n'
-      + 'Regardez le total des PSG Coins accumulés\n\n'
+      + 'Observez votre collection complète de cartes et consultez votre solde de PSG Coins\n\n'
       + '──────────────────────────\n'
       + '💬 **Venez discuter de PSG Dream League dans <#1326910792146354318> !**',
     )
@@ -68,9 +71,8 @@ async function sendGamingRoomEmbed(channel) {
 
   const components = [
     new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('gr_boosters').setLabel('🎴 Les Boosters').setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId('gr_collection').setLabel('🗂️ La Collection').setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('gr_portefeuille').setLabel('🪙 Le Portefeuille').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('gr_boosters').setLabel('🎴 Les Boosters').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId('gr_collection').setLabel('🗂️ La Collection').setStyle(ButtonStyle.Primary),
     ),
   ];
 
@@ -119,7 +121,6 @@ async function handleBoosters(interaction) {
     });
   }
 
-  // Construction des boutons d'achat
   const rows = [];
   let row = new ActionRowBuilder();
   let btnCount = 0;
@@ -146,7 +147,6 @@ async function handleBoosters(interaction) {
 
   await interaction.reply(replyOptions);
 
-  // Après 60s : désactiver les boutons plutôt que supprimer (évite les échecs d'interaction)
   setTimeout(async () => {
     try {
       const disabledRows = rows.map(r => {
@@ -170,7 +170,6 @@ async function handleBuyPack(interaction, packKey) {
   const userId = interaction.user.id;
   const lockKey = `${guildId}:${userId}`;
 
-  // Anti-double-achat : si un achat est déjà en cours pour cet utilisateur, on ignore silencieusement
   if (buyLocks.has(lockKey)) {
     try { await interaction.deferUpdate(); } catch { /* ok */ }
     return;
@@ -180,7 +179,6 @@ async function handleBuyPack(interaction, packKey) {
   try {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   } catch (err) {
-    // deferReply a planté (timeout réseau, interaction expirée...) → libérer le lock immédiatement
     buyLocks.delete(lockKey);
     console.error(`⚠️ deferReply échoué pour achat pack (${packKey}):`, err.message);
     return;
@@ -190,7 +188,6 @@ async function handleBuyPack(interaction, packKey) {
     const packInfo = PACKS_CONFIG[packKey];
     if (!packInfo) return interaction.editReply({ content: '❌ Pack inconnu.' });
 
-    // Lire le solde APRÈS le defer (données fraîches)
     const userData = getUserData(guildId, userId);
 
     if (packKey === 'free_pack') {
@@ -235,7 +232,6 @@ async function handleBuyPack(interaction, packKey) {
       ? cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)]
       : allCards[Math.floor(Math.random() * allCards.length)];
 
-    // Relecture + débit atomique
     const freshData = getUserData(guildId, userId);
     if (packKey !== 'free_pack') freshData.coins -= packInfo.prix;
     freshData.collection.push(card);
@@ -244,6 +240,7 @@ async function handleBuyPack(interaction, packKey) {
     logPackPurchase(interaction, packInfo, card, freshData.coins).catch(() => {});
 
     const typeEmoji = CARD_TYPES[card.type]?.emoji || '🎴';
+    const collectionSize = freshData.collection.length;
 
     function buildCardEmbed() {
       return new EmbedBuilder()
@@ -256,7 +253,7 @@ async function handleBuyPack(interaction, packKey) {
           { name: '\u200b', value: '\u200b', inline: true },
           { name: '📊 Statistiques', value: formatCardStats(card), inline: false },
           { name: '💰 Nouveau solde', value: `${freshData.coins} 🪙`, inline: true },
-          { name: '🎴 Collection', value: `${freshData.collection.length} cartes`, inline: true },
+          { name: '🎴 Collection', value: pluralCartes(collectionSize), inline: true },
         )
         .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON });
     }
@@ -265,7 +262,6 @@ async function handleBuyPack(interaction, packKey) {
     const cardImageUrl = getCardImageUrlLocal(card);
     let cdnImageUrl = cardImageUrl || null;
 
-    // Annonce publique
     const announceChannelId = getPackAnnounceChannel(guildId);
     if (announceChannelId) {
       const announceChannel = interaction.guild.channels.cache.get(String(announceChannelId));
@@ -287,7 +283,6 @@ async function handleBuyPack(interaction, packKey) {
       }
     }
 
-    // Réponse éphémère
     const ephemeralEmbed = buildCardEmbed();
     if (cdnImageUrl) {
       ephemeralEmbed.setImage(cdnImageUrl);
@@ -302,28 +297,8 @@ async function handleBuyPack(interaction, packKey) {
     }
 
   } finally {
-    // Libérer le lock dans tous les cas (succès ou erreur)
     buyLocks.delete(lockKey);
   }
-}
-
-// ─── BOUTON : LE PORTEFEUILLE ────────────────────────────────────────────────
-
-async function handlePortefeuille(interaction) {
-  const userData = getUserData(interaction.guildId, interaction.user.id);
-  const embed = new EmbedBuilder()
-    .setTitle(`💰 Solde de ${interaction.user.displayName}`)
-    .setDescription(`Ton portefeuille PSG sur **${interaction.guild.name}**`)
-    .setColor(PSG_BLUE)
-    .addFields(
-      { name: '💎 PSG Coins', value: `**${userData.coins}** 🪙`, inline: true },
-      { name: '🎴 Collection', value: `${(userData.collection || []).length} carte(s)`, inline: true },
-    )
-    .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON })
-    .setTimestamp();
-  const avatarUrl = interaction.user.displayAvatarURL();
-  if (avatarUrl) embed.setThumbnail(avatarUrl);
-  return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }
 
 // ─── BOUTON : LA COLLECTION → UserSelectMenu ──────────────────────────────────
@@ -331,14 +306,17 @@ async function handlePortefeuille(interaction) {
 async function handleCollection(interaction) {
   const embed = new EmbedBuilder()
     .setTitle('🗂️ Collection')
-    .setDescription('Sélectionne un membre pour voir sa collection, ou choisis-toi directement !')
+    .setDescription('Sélectionne un membre pour voir sa collection, ou clique sur **Ma collection** pour voir la tienne !')
     .setColor(PSG_BLUE)
     .setFooter({ text: 'Paris Saint-Germain • PSG Dream League', iconURL: PSG_FOOTER_ICON });
+
+  const avatarUrl = interaction.user.displayAvatarURL();
+  if (avatarUrl) embed.setThumbnail(avatarUrl);
 
   const row = new ActionRowBuilder().addComponents(
     new UserSelectMenuBuilder()
       .setCustomId(`gr_coll_user_select_${interaction.user.id}`)
-      .setPlaceholder('👤 Choisir un membre...')
+      .setPlaceholder('👤 Voir la collection d\'un membre...')
       .setMinValues(1)
       .setMaxValues(1),
   );
@@ -371,7 +349,7 @@ async function showCollection(interaction, targetUserId, targetUserName) {
     .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON });
 
   if (!Object.keys(cardsGrouped).length) {
-    if (interaction.isStringSelectMenu() || interaction.isUserSelectMenu()) {
+    if (interaction.isStringSelectMenu() || interaction.isUserSelectMenu() || interaction.isButton()) {
       return interaction.update({ embeds: [emptyEmbed], components: [] });
     }
     return interaction.reply({ embeds: [emptyEmbed], flags: MessageFlags.Ephemeral });
@@ -380,6 +358,8 @@ async function showCollection(interaction, targetUserId, targetUserName) {
   const pages = organizeCardsByRarity(cardsGrouped);
   const totalUnique = Object.keys(cardsGrouped).length;
   const totalCards = Object.values(cardsGrouped).reduce((s, d) => s + d.count, 0);
+
+  const targetUserData = getUserData(guildId, targetUserId);
 
   collectionSessions.set(viewerId, {
     guildId,
@@ -390,13 +370,15 @@ async function showCollection(interaction, targetUserId, targetUserName) {
     currentPage: 0,
     totalUnique,
     totalCards,
+    targetCoins: targetUserData.coins,
+    isSelf: targetUserId === viewerId,
     expireAt: Date.now() + 15 * 60 * 1000,
   });
 
-  const embedPage = createCollectionEmbed(targetUserName, pages[0], 1, pages.length, totalUnique, totalCards);
+  const embedPage = createCollectionEmbed(targetUserName, pages[0], 1, pages.length, totalUnique, totalCards, targetUserData.coins, targetUserId === viewerId);
   const components = buildCollectionComponents(pages, 0, pages.length, cardsGrouped, viewerId);
 
-  if (interaction.isStringSelectMenu() || interaction.isUserSelectMenu()) {
+  if (interaction.isStringSelectMenu() || interaction.isUserSelectMenu() || interaction.isButton()) {
     return interaction.update({ embeds: [embedPage], components });
   }
   return interaction.reply({ embeds: [embedPage], components, flags: MessageFlags.Ephemeral });
@@ -408,7 +390,6 @@ const RARITY_ORDER = { Légendaire: 0, Legend: 0, Unique: 1, Épique: 2, Elite: 
 const CARDS_PER_PAGE = 10;
 const collectionSessions = new Map();
 
-// Nettoyage périodique des sessions expirées (toutes les 5 min)
 setInterval(() => {
   const now = Date.now();
   for (const [key, session] of collectionSessions.entries()) {
@@ -438,10 +419,17 @@ function organizeCardsByRarity(cardsGrouped) {
   return pages;
 }
 
-function createCollectionEmbed(userName, pageData, currentPage, totalPages, uniqueCards, totalCards) {
+function createCollectionEmbed(userName, pageData, currentPage, totalPages, uniqueCards, totalCards, coins, isSelf) {
+  const coinsLine = `\n🪙 Solde : **${coins} PSG Coins**`;
+
   const embed = new EmbedBuilder()
     .setTitle(`📋 Collection de ${userName}`)
-    .setDescription(`🎴 Total: ${totalCards} carte(s)\n✨ Cartes uniques: ${uniqueCards}\n📄 Page: ${currentPage}/${totalPages}`)
+    .setDescription(
+      `🎴 ${pluralCartes(totalCards)}\n`
+      + `✨ ${uniqueCards} unique${uniqueCards > 1 ? 's' : ''}`
+      + coinsLine
+      + `\n📄 Page : ${currentPage}/${totalPages}`,
+    )
     .setColor(PSG_BLUE)
     .setFooter({ text: 'Sélectionne une carte pour voir ses détails • Paris Saint-Germain', iconURL: PSG_FOOTER_ICON });
 
@@ -491,6 +479,7 @@ function restoreSession(viewerId, guildId, userName) {
   const pages = organizeCardsByRarity(cardsGrouped);
   const totalUnique = Object.keys(cardsGrouped).length;
   const totalCards = Object.values(cardsGrouped).reduce((s, d) => s + d.count, 0);
+  const userData = getUserData(guildId, viewerId);
 
   const session = {
     guildId,
@@ -501,6 +490,8 @@ function restoreSession(viewerId, guildId, userName) {
     currentPage: 0,
     totalUnique,
     totalCards,
+    targetCoins: userData.coins,
+    isSelf: true,
     expireAt: Date.now() + 15 * 60 * 1000,
   };
 
@@ -532,7 +523,9 @@ async function handleCollectionInteraction(interaction) {
     if (interaction.user.id !== requesterId) {
       return interaction.reply({ content: "❌ Ce n'est pas ta vue !", flags: MessageFlags.Ephemeral });
     }
-    return showCollection(interaction, interaction.user.id, interaction.user.displayName);
+    const targetMember = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
+    const targetName = targetMember?.displayName || interaction.user.username;
+    return showCollection(interaction, interaction.user.id, targetName);
   }
 
   // ── StringSelectMenu : détail d'une carte ────────────────────────────────
@@ -542,7 +535,6 @@ async function handleCollectionInteraction(interaction) {
       return interaction.reply({ content: "❌ Ce n'est pas ta vue!", flags: MessageFlags.Ephemeral });
     }
 
-    // ✅ Restauration automatique si session absente (ex: redémarrage du bot)
     const session = collectionSessions.get(viewerId)
       ?? restoreSession(viewerId, interaction.guildId, interaction.user.displayName);
 
@@ -583,7 +575,6 @@ async function handleCollectionInteraction(interaction) {
       return interaction.reply({ content: "❌ Ce n'est pas ta vue!", flags: MessageFlags.Ephemeral });
     }
 
-    // ✅ Restauration automatique si session absente (ex: redémarrage du bot)
     const session = collectionSessions.get(viewerId)
       ?? restoreSession(viewerId, interaction.guildId, interaction.user.displayName);
 
@@ -592,16 +583,27 @@ async function handleCollectionInteraction(interaction) {
     else {
       // Actualiser
       const fresh = getUserCardsGrouped(session.guildId, session.userId);
+      const freshUserData = getUserData(session.guildId, session.userId);
       session.cardsGrouped = fresh;
       session.pages = organizeCardsByRarity(fresh);
       session.totalUnique = Object.keys(fresh).length;
       session.totalCards = Object.values(fresh).reduce((s, d) => s + d.count, 0);
+      session.targetCoins = freshUserData.coins;
       session.currentPage = Math.min(session.currentPage, Math.max(0, session.pages.length - 1));
       session.expireAt = Date.now() + 15 * 60 * 1000;
     }
 
     return interaction.update({
-      embeds: [createCollectionEmbed(session.userName, session.pages[session.currentPage], session.currentPage + 1, session.pages.length, session.totalUnique, session.totalCards)],
+      embeds: [createCollectionEmbed(
+        session.userName,
+        session.pages[session.currentPage],
+        session.currentPage + 1,
+        session.pages.length,
+        session.totalUnique,
+        session.totalCards,
+        session.targetCoins,
+        session.isSelf,
+      )],
       components: buildCollectionComponents(session.pages, session.currentPage, session.pages.length, session.cardsGrouped, viewerId),
     });
   }
@@ -611,7 +613,7 @@ module.exports = {
   sendGamingRoomEmbed,
   handleBoosters,
   handleBuyPack,
-  handlePortefeuille,
+  handlePortefeuille: () => {}, // conservé pour compatibilité ascendante, ne fait plus rien
   handleCollection,
   handleCollectionInteraction,
 };
