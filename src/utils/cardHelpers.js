@@ -20,6 +20,7 @@ function getRarityCardImage(rarity) {
     Elite: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/2048px-Paris_Saint-Germain_Logo.svg.png',
     Unique: 'https://upload.wikimedia.org/wikipedia/commons/4/43/PSG_logo_logotype.png',
     Legend: 'https://upload.wikimedia.org/wikipedia/commons/4/43/PSG_logo_logotype.png',
+    Give: 'https://upload.wikimedia.org/wikipedia/commons/4/43/PSG_logo_logotype.png',
   };
   return images[rarity] || images.Basic;
 }
