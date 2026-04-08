@@ -14,15 +14,16 @@ function getCardTypeEmoji(cardType) {
 }
 
 function getRarityCardImage(rarity) {
+  const fallback = 'https://www.footpack.fr/wp-content/uploads/2025/06/etoile-maillot-psg-800x800-c-center.jpeg';
   const images = {
-    Basic: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png',
-    Advanced: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png',
-    Elite: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/2048px-Paris_Saint-Germain_Logo.svg.png',
-    Unique: 'https://upload.wikimedia.org/wikipedia/commons/4/43/PSG_logo_logotype.png',
-    Legend: 'https://upload.wikimedia.org/wikipedia/commons/4/43/PSG_logo_logotype.png',
-    Give: 'https://upload.wikimedia.org/wikipedia/commons/4/43/PSG_logo_logotype.png',
+    Basic:    fallback,
+    Advanced: fallback,
+    Elite:    fallback,
+    Unique:   fallback,
+    Legend:   fallback,
+    Give:     fallback,
   };
-  return images[rarity] || images.Basic;
+  return images[rarity] || fallback;
 }
 
 function createStatBar(value, maxValue = 100) {
