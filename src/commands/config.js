@@ -3,13 +3,12 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelect
 const {
   loadServerConfig, saveServerConfig,
   addRolePermission, removeRolePermission, getAllowedRoles,
-  addChannelPermission, removeChannelPermission, getAllowedChannels,
-  getNoCoinsChannels, addNoCoinsChannel, removeNoCoinsChannel,
+  addNoCoinsChannel, removeNoCoinsChannel, getNoCoinsChannels,
   getNoCoinsCategories, addNoCoinCategory, removeNoCoinCategory,
   checkConfigPermission,
 } = require('../utils/permissions');
 const {
-  getMinigameChannel, getNextMinigameTime,
+  getMinigameChannel,
   getGamingRoomMessages, addGamingRoomMessage, removeGamingRoomMessage,
   getPackAnnounceChannel, setPackAnnounceChannel,
 } = require('../utils/database');
@@ -75,8 +74,7 @@ function createMainEmbed(interaction) {
     .setDescription(`Bienvenue dans le panneau de configuration pour **${interaction.guild.name}**\n\nChoisis une catégorie :`)
     .setColor(PSG_BLUE)
     .addFields(
-      { name: '🕹️ Gaming Room', value: 'Définis les salons où l\'embed principal sera envoyé (Boosters, Collection, Portefeuille)', inline: false },
-      { name: '🗂️ Salon /collection', value: 'Définis les salons où la commande `/collection` peut être utilisée', inline: false },
+      { name: '🕹️ Gaming Room', value: 'Définis les salons où l\'embed principal sera envoyé (Boosters, Collection)', inline: false },
       { name: '👑 Rôles Administrateurs', value: 'Définis quels rôles peuvent utiliser `/addcoins`, `/removecoins`, `/setcoins`, `/give`', inline: false },
       { name: '🔧 Rôles de Configuration', value: 'Définis quels rôles peuvent accéder à `/config`', inline: false },
       { name: '📣 Salon d\'annonce packs', value: 'Définis le salon où les ouvertures de packs seront annoncées publiquement avec @mention du joueur', inline: false },
@@ -94,7 +92,6 @@ function createMainComponents() {
       new ButtonBuilder().setCustomId('config_roles_config').setLabel('🔧 Rôles Config').setStyle(ButtonStyle.Primary),
     ),
     new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('config_collection_salon').setLabel('🗂️ Salon /collection').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId('config_pack_announce').setLabel('📣 Annonce packs').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId('config_logs').setLabel('📋 Salon de Logs').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId('config_no_coins').setLabel('🚫 Sans Coins').setStyle(ButtonStyle.Primary),
@@ -122,15 +119,12 @@ async function configCommand(interaction) {
 }
 
 // ==================== HELPER : répondre sans risque de timeout ====================
-// FIX: Toutes les interactions de select menu utilisent deferUpdate + editReply
-// pour éviter les ConnectTimeoutError lors des interaction.update() ou reply() tardifs.
 
 async function safeUpdate(interaction, data) {
   try {
     if (interaction.isButton()) {
       return await interaction.update(data);
     }
-    // Pour les select menus : deferUpdate puis editReply
     await interaction.deferUpdate();
     return await interaction.editReply(data);
   } catch (e) {
@@ -165,7 +159,7 @@ async function handleConfigInteraction(interaction) {
     const embed = new EmbedBuilder()
       .setTitle('🕹️ Gaming Room')
       .setDescription(
-        'L\'embed Gaming Room contient les boutons **Boosters**, **Collection** et **Portefeuille**.\n'
+        'L\'embed Gaming Room contient les boutons **Boosters** et **Collection**.\n'
         + 'Sélectionne un salon pour y envoyer l\'embed, ou retire un salon existant.\n\n'
         + `**Salons actifs :** ${roomList.length ? roomList.join(', ') : 'Aucun ❌'}`,
       )
@@ -185,7 +179,6 @@ async function handleConfigInteraction(interaction) {
     return safeUpdate(interaction, { embeds: [embed], components: rows });
   }
 
-  // Ajouter salon Gaming Room
   if (customId.startsWith('config_gr_add_')) {
     const channelId = interaction.values[0].replace('gr__add__', '');
     const channel = guild.channels.cache.get(channelId);
@@ -207,7 +200,6 @@ async function handleConfigInteraction(interaction) {
     }
   }
 
-  // Retirer salon Gaming Room
   if (customId.startsWith('config_gr_remove_')) {
     const channelId = interaction.values[0].replace('gr__remove__', '');
     const rooms = getGamingRoomMessages(guildId);
@@ -226,52 +218,6 @@ async function handleConfigInteraction(interaction) {
 
     const ch = guild.channels.cache.get(channelId);
     return safeReply(interaction, { content: `✅ Gaming Room retiré${ch ? ` de ${ch}` : ''}` });
-  }
-
-  // ==================== 🗂️ SALON /COLLECTION ====================
-  // FIX: Utilise config.channels.collection (via addChannelPermission/getAllowedChannels)
-  // au lieu de l'ancien config.collection_channels — cohérent avec gaming_room.js et permissions.js
-
-  if (customId === 'config_collection_salon') {
-    const collectionChannels = getAllowedChannels(guildId, 'collection');
-    const chList = collectionChannels.map(id => guild.channels.cache.get(id)?.toString()).filter(Boolean);
-
-    const embed = new EmbedBuilder()
-      .setTitle('🗂️ Salon /collection')
-      .setDescription(
-        'Configure les salons où la commande `/collection` peut être utilisée.\n\n'
-        + 'Si aucun salon n\'est configuré, la commande est utilisable partout.\n\n'
-        + `**Salons autorisés :** ${chList.length ? chList.join(', ') : 'Partout ✅'}`,
-      )
-      .setColor(PSG_BLUE);
-
-    const addOpts = channelOptions(guild, 'collsalon__add__');
-    const addMenus = buildSelectMenus(addOpts, 'config_collsalon_add', '➕ Ajouter un salon autorisé');
-    const removeOpts = collectionChannels.map(id => {
-      const ch = guild.channels.cache.get(id);
-      return ch ? { label: `#${ch.name}`.slice(0, 100), value: `collsalon__remove__${id}` } : null;
-    }).filter(Boolean);
-    const removeMenus = buildSelectMenus(removeOpts, 'config_collsalon_remove', '➖ Retirer un salon');
-
-    return safeUpdate(interaction, { embeds: [embed], components: buildRows([...addMenus, ...removeMenus], 'config_back_main') });
-  }
-
-  if (customId.startsWith('config_collsalon_add_')) {
-    // FIX: deferUpdate d'abord pour éviter le timeout réseau
-    await interaction.deferUpdate();
-    const value = interaction.values[0];
-    const channelId = value.replace('collsalon__add__', '');
-    addChannelPermission(guildId, 'collection', channelId);
-    const ch = guild.channels.cache.get(channelId);
-    return interaction.editReply({ content: `✅ ${ch} ajouté aux salons autorisés pour \`/collection\``, embeds: [], components: [] });
-  }
-
-  if (customId.startsWith('config_collsalon_remove_')) {
-    await interaction.deferUpdate();
-    const value = interaction.values[0];
-    const channelId = value.replace('collsalon__remove__', '');
-    removeChannelPermission(guildId, 'collection', channelId);
-    return interaction.editReply({ content: '✅ Salon retiré des salons autorisés pour `/collection`', embeds: [], components: [] });
   }
 
   // ==================== 👑 RÔLES ADMIN ====================
@@ -477,11 +423,6 @@ async function handleConfigInteraction(interaction) {
     const rooms = getGamingRoomMessages(guildId);
     const roomList = rooms.map(r => { const ch = guild.channels.cache.get(r.channelId); return ch ? ch.toString() : null; }).filter(Boolean);
     embed.addFields({ name: '🕹️ Gaming Room', value: roomList.length ? roomList.join('\n') : 'Non configuré ❌', inline: false });
-
-    // FIX: Utilise getAllowedChannels pour cohérence
-    const collectionChannels = getAllowedChannels(guildId, 'collection');
-    const collList = collectionChannels.map(id => guild.channels.cache.get(id)?.toString()).filter(Boolean);
-    embed.addFields({ name: '🗂️ Salon /collection', value: collList.length ? collList.join('\n') : 'Partout ✅', inline: true });
 
     const mgChannelId = getMinigameChannel(guildId);
     const mgChannel = mgChannelId ? guild.channels.cache.get(mgChannelId) : null;

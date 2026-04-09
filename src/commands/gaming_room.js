@@ -1,7 +1,7 @@
 // src/commands/gaming_room.js - Embed permanent PSG Dream League
 const {
   EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle,
-  AttachmentBuilder, StringSelectMenuBuilder, MessageFlags,
+  AttachmentBuilder, StringSelectMenuBuilder, UserSelectMenuBuilder, MessageFlags,
 } = require('discord.js');
 const {
   getUserData, saveUserData, loadPackCards,
@@ -16,6 +16,15 @@ const {
 const { logPackPurchase } = require('../utils/logs');
 const fs = require('fs');
 const path = require('path');
+
+// ─── Lock anti-double-achat ────────────────────────────────────────────────────
+const buyLocks = new Set();
+
+// ─── Helper accord carte/cartes ───────────────────────────────────────────────
+
+function pluralCartes(n) {
+  return `${n} carte${n > 1 ? 's' : ''}`;
+}
 
 // ─── Helpers image ────────────────────────────────────────────────────────────
 
@@ -51,9 +60,7 @@ async function sendGamingRoomEmbed(channel) {
       + '🎴 **Boutique PSG Dream League**\n'
       + 'Retrouvez tous les boosters de cartes afin de composer votre équipe de rêve !\n\n'
       + '🗂️ **Collection**\n'
-      + 'Observez votre collection complète de cartes\n\n'
-      + '🪙 **Portefeuille**\n'
-      + 'Regardez le total des PSG Coins accumulés\n\n'
+      + 'Observez votre collection complète de cartes et consultez votre solde de PSG Coins\n\n'
       + '──────────────────────────\n'
       + '💬 **Venez discuter de PSG Dream League dans <#1326910792146354318> !**',
     )
@@ -64,9 +71,8 @@ async function sendGamingRoomEmbed(channel) {
 
   const components = [
     new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('gr_boosters').setLabel('🎴 Les Boosters').setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId('gr_collection').setLabel('🗂️ La Collection').setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('gr_portefeuille').setLabel('🪙 Le Portefeuille').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('gr_boosters').setLabel('🎴 Les Boosters').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId('gr_collection').setLabel('🗂️ La Collection').setStyle(ButtonStyle.Primary),
     ),
   ];
 
@@ -140,7 +146,21 @@ async function handleBoosters(interaction) {
   }
 
   await interaction.reply(replyOptions);
-  setTimeout(async () => { try { await interaction.deleteReply(); } catch { /* ok */ } }, 60000);
+
+  setTimeout(async () => {
+    try {
+      const disabledRows = rows.map(r => {
+        const newRow = new ActionRowBuilder();
+        newRow.addComponents(
+          r.components.map(btn =>
+            ButtonBuilder.from(btn.toJSON()).setDisabled(true),
+          ),
+        );
+        return newRow;
+      });
+      await interaction.editReply({ components: disabledRows });
+    } catch { /* message déjà supprimé ou interaction expirée, ok */ }
+  }, 60000);
 }
 
 // ─── BOUTON : ACHAT PACK ─────────────────────────────────────────────────────
@@ -148,131 +168,236 @@ async function handleBoosters(interaction) {
 async function handleBuyPack(interaction, packKey) {
   const guildId = interaction.guildId;
   const userId = interaction.user.id;
-  const userData = getUserData(guildId, userId);
-  const packInfo = PACKS_CONFIG[packKey];
+  const lockKey = `${guildId}:${userId}`;
 
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  if (buyLocks.has(lockKey)) {
+    try { await interaction.deferUpdate(); } catch { /* ok */ }
+    return;
+  }
+  buyLocks.add(lockKey);
 
-  if (!packInfo) return interaction.editReply({ content: '❌ Pack inconnu.' });
+  try {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  } catch (err) {
+    buyLocks.delete(lockKey);
+    console.error(`⚠️ deferReply échoué pour achat pack (${packKey}):`, err.message);
+    return;
+  }
 
-  if (packKey === 'free_pack') {
-    if (!canClaimFreePack(guildId, userId)) {
-      const cooldown = getFreePackCooldown(guildId, userId);
-      const hours = Math.floor(cooldown / 3600);
-      const minutes = Math.floor((cooldown % 3600) / 60);
+  try {
+    const packInfo = PACKS_CONFIG[packKey];
+    if (!packInfo) return interaction.editReply({ content: '❌ Pack inconnu.' });
+
+    const userData = getUserData(guildId, userId);
+
+    if (packKey === 'free_pack') {
+      if (!canClaimFreePack(guildId, userId)) {
+        const cooldown = getFreePackCooldown(guildId, userId);
+        const hours = Math.floor(cooldown / 3600);
+        const minutes = Math.floor((cooldown % 3600) / 60);
+        return interaction.editReply({
+          embeds: [new EmbedBuilder()
+            .setTitle('⏰ Pack gratuit indisponible')
+            .setDescription(`Tu as déjà réclamé ton pack gratuit !\n\n**Prochain pack dans :** ${hours}h ${minutes}m`)
+            .setColor(PSG_RED)
+            .setFooter({ text: 'Le pack gratuit se recharge toutes les 24 heures' })],
+        });
+      }
+      claimFreePack(guildId, userId);
+    } else if (userData.coins < packInfo.prix) {
       return interaction.editReply({
-        embeds: [new EmbedBuilder().setTitle('⏰ Pack gratuit indisponible').setDescription(`Tu as déjà réclamé ton pack gratuit !\n\n**Prochain pack dans :** ${hours}h ${minutes}m`).setColor(PSG_RED).setFooter({ text: 'Le pack gratuit se recharge toutes les 24 heures' })],
+        embeds: [new EmbedBuilder()
+          .setTitle('❌ Solde insuffisant')
+          .setDescription("Tu n'as pas assez de PSG Coins pour acheter ce pack !")
+          .setColor(PSG_RED)
+          .addFields(
+            { name: '💰 Prix du pack', value: `${packInfo.prix} 🪙`, inline: true },
+            { name: '💎 Ton solde', value: `${userData.coins} 🪙`, inline: true },
+            { name: '❗ Il te manque', value: `${packInfo.prix - userData.coins} 🪙`, inline: true },
+          )
+          .setFooter({ text: 'Parlez dans le chat pour gagner des PSG Coins !' })],
       });
     }
-    claimFreePack(guildId, userId);
-  } else if (userData.coins < packInfo.prix) {
-    return interaction.editReply({
-      embeds: [new EmbedBuilder().setTitle('❌ Solde insuffisant').setDescription("Tu n'as pas assez de PSG Coins pour acheter ce pack !").setColor(PSG_RED).addFields(
-        { name: '💰 Prix du pack', value: `${packInfo.prix} 🪙`, inline: true },
-        { name: '💎 Ton solde', value: `${userData.coins} 🪙`, inline: true },
-        { name: '❗ Il te manque', value: `${packInfo.prix - userData.coins} 🪙`, inline: true },
-      ).setFooter({ text: 'Parlez dans le chat pour gagner des PSG Coins !' })],
-    });
-  }
 
-  const allCards = loadPackCards(packKey);
-  if (!allCards.length) return interaction.editReply({ embeds: [new EmbedBuilder().setTitle('❌ Erreur').setDescription('Aucune carte disponible dans ce pack.').setColor(PSG_RED)] });
-
-  const chosenRarity = weightedRandom(packInfo.drop_rates);
-  const cardsOfRarity = allCards.filter(c => c.rareté === chosenRarity);
-  const card = cardsOfRarity.length ? cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)] : allCards[Math.floor(Math.random() * allCards.length)];
-
-  const freshData = getUserData(guildId, userId);
-  if (packKey !== 'free_pack') freshData.coins -= packInfo.prix;
-  freshData.collection.push(card);
-  saveUserData(guildId, userId, freshData);
-
-  logPackPurchase(interaction, packInfo, card, freshData.coins).catch(() => {});
-
-  const typeEmoji = CARD_TYPES[card.type]?.emoji || '🎴';
-
-  function buildCardEmbed() {
-    return new EmbedBuilder()
-      .setTitle(`🎁 ${packInfo.emoji} ${packInfo.nom} ouvert !`)
-      .setDescription(`# 🎴 ${card.nom}`)
-      .setColor(getRarityColor(card.rareté))
-      .addFields(
-        { name: `${typeEmoji} Type`, value: card.type ? card.type.charAt(0).toUpperCase() + card.type.slice(1) : 'Joueur', inline: true },
-        { name: '🎲 Chance de drop', value: `${packInfo.drop_rates[card.rareté] ?? '?'}%`, inline: true },
-        { name: '\u200b', value: '\u200b', inline: true },
-        { name: '📊 Statistiques', value: formatCardStats(card), inline: false },
-        { name: '💰 Nouveau solde', value: `${freshData.coins} 🪙`, inline: true },
-        { name: '🎴 Collection', value: `${freshData.collection.length} cartes`, inline: true },
-      )
-      .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON });
-  }
-
-  const imageFile = getCardImageFile(card);
-  const cardImageUrl = getCardImageUrlLocal(card);
-
-  let cdnImageUrl = cardImageUrl || null;
-
-  const announceChannelId = getPackAnnounceChannel(guildId);
-  if (announceChannelId) {
-    const announceChannel = interaction.guild.channels.cache.get(String(announceChannelId));
-    if (announceChannel) {
-      const publicEmbed = buildCardEmbed();
-      try {
-        let sentMsg;
-        if (imageFile) {
-          const announceFile = getCardImageFile(card);
-          publicEmbed.setImage(`attachment://${announceFile.name}`);
-          sentMsg = await announceChannel.send({ content: `🎉 ${interaction.user}`, embeds: [publicEmbed], files: [announceFile] });
-          const attachment = sentMsg.attachments.first();
-          if (attachment) cdnImageUrl = attachment.url;
-        } else {
-          if (cardImageUrl) publicEmbed.setImage(cardImageUrl);
-          else publicEmbed.setThumbnail(getRarityCardImage(card.rareté || 'Basic'));
-          await announceChannel.send({ content: `🎉 ${interaction.user}`, embeds: [publicEmbed] });
-        }
-      } catch { /* silencieux si le bot n'a pas accès au salon */ }
+    const allCards = loadPackCards(packKey);
+    if (!allCards.length) {
+      return interaction.editReply({
+        embeds: [new EmbedBuilder().setTitle('❌ Erreur').setDescription('Aucune carte disponible dans ce pack.').setColor(PSG_RED)],
+      });
     }
-  }
 
-  const ephemeralEmbed = buildCardEmbed();
+    const chosenRarity = weightedRandom(packInfo.drop_rates);
+    const cardsOfRarity = allCards.filter(c => c.rareté === chosenRarity);
+    const card = cardsOfRarity.length
+      ? cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)]
+      : allCards[Math.floor(Math.random() * allCards.length)];
 
-  if (cdnImageUrl) {
-    ephemeralEmbed.setImage(cdnImageUrl);
-    await interaction.editReply({ embeds: [ephemeralEmbed] });
-  } else if (imageFile) {
-    const ephemeralFile = getCardImageFile(card);
-    ephemeralEmbed.setImage(`attachment://${ephemeralFile.name}`);
-    await interaction.editReply({ embeds: [ephemeralEmbed], files: [ephemeralFile] });
-  } else {
-    if (!cardImageUrl) ephemeralEmbed.setThumbnail(getRarityCardImage(card.rareté || 'Basic'));
-    await interaction.editReply({ embeds: [ephemeralEmbed] });
+    const freshData = getUserData(guildId, userId);
+    if (packKey !== 'free_pack') freshData.coins -= packInfo.prix;
+    freshData.collection.push(card);
+    saveUserData(guildId, userId, freshData);
+
+    logPackPurchase(interaction, packInfo, card, freshData.coins).catch(() => {});
+
+    const typeEmoji = CARD_TYPES[card.type]?.emoji || '🎴';
+    const collectionSize = freshData.collection.length;
+
+    function buildCardEmbed() {
+      return new EmbedBuilder()
+        .setTitle(`🎁 ${packInfo.emoji} ${packInfo.nom} ouvert !`)
+        .setDescription(`# 🎴 ${card.nom}`)
+        .setColor(getRarityColor(card.rareté))
+        .addFields(
+          { name: `${typeEmoji} Type`, value: card.type ? card.type.charAt(0).toUpperCase() + card.type.slice(1) : 'Joueur', inline: true },
+          { name: '🎲 Chance de drop', value: `${packInfo.drop_rates[card.rareté] ?? '?'}%`, inline: true },
+          { name: '\u200b', value: '\u200b', inline: true },
+          { name: '📊 Statistiques', value: formatCardStats(card), inline: false },
+          { name: '💰 Nouveau solde', value: `${freshData.coins} 🪙`, inline: true },
+          { name: '🎴 Collection', value: pluralCartes(collectionSize), inline: true },
+        )
+        .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON });
+    }
+
+    const imageFile = getCardImageFile(card);
+    const cardImageUrl = getCardImageUrlLocal(card);
+    let cdnImageUrl = cardImageUrl || null;
+
+    const announceChannelId = getPackAnnounceChannel(guildId);
+    if (announceChannelId) {
+      const announceChannel = interaction.guild.channels.cache.get(String(announceChannelId));
+      if (announceChannel) {
+        const publicEmbed = buildCardEmbed();
+        try {
+          if (imageFile) {
+            const announceFile = getCardImageFile(card);
+            publicEmbed.setImage(`attachment://${announceFile.name}`);
+            const sentMsg = await announceChannel.send({ content: `🎉 ${interaction.user}`, embeds: [publicEmbed], files: [announceFile] });
+            const attachment = sentMsg.attachments.first();
+            if (attachment) cdnImageUrl = attachment.url;
+          } else {
+            if (cardImageUrl) publicEmbed.setImage(cardImageUrl);
+            else publicEmbed.setThumbnail(getRarityCardImage(card.rareté || 'Basic'));
+            await announceChannel.send({ content: `🎉 ${interaction.user}`, embeds: [publicEmbed] });
+          }
+        } catch { /* bot sans accès au salon */ }
+      }
+    }
+
+    const ephemeralEmbed = buildCardEmbed();
+    if (cdnImageUrl) {
+      ephemeralEmbed.setImage(cdnImageUrl);
+      await interaction.editReply({ embeds: [ephemeralEmbed] });
+    } else if (imageFile) {
+      const ephemeralFile = getCardImageFile(card);
+      ephemeralEmbed.setImage(`attachment://${ephemeralFile.name}`);
+      await interaction.editReply({ embeds: [ephemeralEmbed], files: [ephemeralFile] });
+    } else {
+      if (!cardImageUrl) ephemeralEmbed.setThumbnail(getRarityCardImage(card.rareté || 'Basic'));
+      await interaction.editReply({ embeds: [ephemeralEmbed] });
+    }
+
+  } finally {
+    buyLocks.delete(lockKey);
   }
 }
 
-// ─── BOUTON : LE PORTEFEUILLE ────────────────────────────────────────────────
+// ─── BOUTON : LA COLLECTION → UserSelectMenu ──────────────────────────────────
 
-async function handlePortefeuille(interaction) {
-  const userData = getUserData(interaction.guildId, interaction.user.id);
+async function handleCollection(interaction) {
   const embed = new EmbedBuilder()
-    .setTitle(`💰 Solde de ${interaction.user.displayName}`)
-    .setDescription(`Ton portefeuille PSG sur **${interaction.guild.name}**`)
+    .setTitle('🗂️ Collection')
+    .setDescription('Sélectionne un membre pour voir sa collection, ou clique sur **Ma collection** pour voir la tienne !')
     .setColor(PSG_BLUE)
-    .addFields(
-      { name: '💎 PSG Coins', value: `**${userData.coins}** 🪙`, inline: true },
-      { name: '🎴 Collection', value: `${(userData.collection || []).length} carte(s)`, inline: true },
-    )
-    .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON })
-    .setTimestamp();
+    .setFooter({ text: 'Paris Saint-Germain • PSG Dream League', iconURL: PSG_FOOTER_ICON });
+
   const avatarUrl = interaction.user.displayAvatarURL();
   if (avatarUrl) embed.setThumbnail(avatarUrl);
-  return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+
+  const row = new ActionRowBuilder().addComponents(
+    new UserSelectMenuBuilder()
+      .setCustomId(`gr_coll_user_select_${interaction.user.id}`)
+      .setPlaceholder('👤 Voir la collection d\'un membre...')
+      .setMinValues(1)
+      .setMaxValues(1),
+  );
+
+  const myCollectionBtn = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`gr_coll_self_${interaction.user.id}`)
+      .setLabel('📋 Ma collection')
+      .setStyle(ButtonStyle.Primary),
+  );
+
+  return interaction.reply({
+    embeds: [embed],
+    components: [row, myCollectionBtn],
+    flags: MessageFlags.Ephemeral,
+  });
 }
 
-// ─── BOUTON : LA COLLECTION ───────────────────────────────────────────────────
+// ─── COLLECTION : afficher pour un userId donné ───────────────────────────────
+
+async function showCollection(interaction, targetUserId, targetUserName) {
+  const guildId = interaction.guildId;
+  const viewerId = interaction.user.id;
+  const cardsGrouped = getUserCardsGrouped(guildId, targetUserId);
+
+  const emptyEmbed = new EmbedBuilder()
+    .setTitle(`📋 Collection de ${targetUserName}`)
+    .setDescription('🔭 Cette collection est vide!\n\nAchète des packs pour commencer ta collection!')
+    .setColor(PSG_BLUE)
+    .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON });
+
+  if (!Object.keys(cardsGrouped).length) {
+    if (interaction.isStringSelectMenu() || interaction.isUserSelectMenu() || interaction.isButton()) {
+      return interaction.update({ embeds: [emptyEmbed], components: [] });
+    }
+    return interaction.reply({ embeds: [emptyEmbed], flags: MessageFlags.Ephemeral });
+  }
+
+  const pages = organizeCardsByRarity(cardsGrouped);
+  const totalUnique = Object.keys(cardsGrouped).length;
+  const totalCards = Object.values(cardsGrouped).reduce((s, d) => s + d.count, 0);
+
+  const targetUserData = getUserData(guildId, targetUserId);
+
+  collectionSessions.set(viewerId, {
+    guildId,
+    userId: targetUserId,
+    userName: targetUserName,
+    cardsGrouped,
+    pages,
+    currentPage: 0,
+    totalUnique,
+    totalCards,
+    targetCoins: targetUserData.coins,
+    isSelf: targetUserId === viewerId,
+    expireAt: Date.now() + 15 * 60 * 1000,
+  });
+
+  const embedPage = createCollectionEmbed(targetUserName, pages[0], 1, pages.length, totalUnique, totalCards, targetUserData.coins, targetUserId === viewerId);
+  const components = buildCollectionComponents(pages, 0, pages.length, cardsGrouped, viewerId);
+
+  if (interaction.isStringSelectMenu() || interaction.isUserSelectMenu() || interaction.isButton()) {
+    return interaction.update({ embeds: [embedPage], components });
+  }
+  return interaction.reply({ embeds: [embedPage], components, flags: MessageFlags.Ephemeral });
+}
+
+// ─── COLLECTION : données ─────────────────────────────────────────────────────
 
 const RARITY_ORDER = { Légendaire: 0, Legend: 0, Unique: 1, Épique: 2, Elite: 2, Advanced: 3, Basic: 4 };
 const CARDS_PER_PAGE = 10;
 const collectionSessions = new Map();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, session] of collectionSessions.entries()) {
+    if (session.expireAt && now > session.expireAt) {
+      collectionSessions.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
 
 function getRarityOrder(rarity) { return RARITY_ORDER[rarity] ?? 999; }
 
@@ -294,10 +419,17 @@ function organizeCardsByRarity(cardsGrouped) {
   return pages;
 }
 
-function createCollectionEmbed(userName, pageData, currentPage, totalPages, uniqueCards, totalCards) {
+function createCollectionEmbed(userName, pageData, currentPage, totalPages, uniqueCards, totalCards, coins, isSelf) {
+  const coinsLine = `\n🪙 Solde : **${coins} PSG Coins**`;
+
   const embed = new EmbedBuilder()
     .setTitle(`📋 Collection de ${userName}`)
-    .setDescription(`🎴 Total: ${totalCards} carte(s)\n✨ Cartes uniques: ${uniqueCards}\n📄 Page: ${currentPage}/${totalPages}`)
+    .setDescription(
+      `🎴 ${pluralCartes(totalCards)}\n`
+      + `✨ ${uniqueCards} unique${uniqueCards > 1 ? 's' : ''}`
+      + coinsLine
+      + `\n📄 Page : ${currentPage}/${totalPages}`,
+    )
     .setColor(PSG_BLUE)
     .setFooter({ text: 'Sélectionne une carte pour voir ses détails • Paris Saint-Germain', iconURL: PSG_FOOTER_ICON });
 
@@ -340,29 +472,31 @@ function buildCollectionComponents(pages, currentPage, totalPages, cardsGrouped,
   return rows;
 }
 
-async function handleCollection(interaction) {
-  const guildId = interaction.guildId;
-  const userId = interaction.user.id;
-  const cardsGrouped = getUserCardsGrouped(guildId, userId);
+// ─── Helper : recrée une session si absente (résistance aux redémarrages) ──────
 
-  if (!Object.keys(cardsGrouped).length) {
-    return interaction.reply({
-      embeds: [new EmbedBuilder().setTitle(`📋 Collection de ${interaction.user.displayName}`).setDescription('🔭 Cette collection est vide!\n\nAchète des packs pour commencer ta collection!').setColor(PSG_BLUE).setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON })],
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-
+function restoreSession(viewerId, guildId, userName) {
+  const cardsGrouped = getUserCardsGrouped(guildId, viewerId);
   const pages = organizeCardsByRarity(cardsGrouped);
   const totalUnique = Object.keys(cardsGrouped).length;
   const totalCards = Object.values(cardsGrouped).reduce((s, d) => s + d.count, 0);
+  const userData = getUserData(guildId, viewerId);
 
-  collectionSessions.set(userId, { guildId, userId, userName: interaction.user.displayName, cardsGrouped, pages, currentPage: 0, totalUnique, totalCards });
+  const session = {
+    guildId,
+    userId: viewerId,
+    userName: userName || 'Toi',
+    cardsGrouped,
+    pages,
+    currentPage: 0,
+    totalUnique,
+    totalCards,
+    targetCoins: userData.coins,
+    isSelf: true,
+    expireAt: Date.now() + 15 * 60 * 1000,
+  };
 
-  return interaction.reply({
-    embeds: [createCollectionEmbed(interaction.user.displayName, pages[0], 1, pages.length, totalUnique, totalCards)],
-    components: buildCollectionComponents(pages, 0, pages.length, cardsGrouped, userId),
-    flags: MessageFlags.Ephemeral,
-  });
+  collectionSessions.set(viewerId, session);
+  return session;
 }
 
 // ─── GESTION INTERACTIONS COLLECTION ─────────────────────────────────────────
@@ -370,11 +504,39 @@ async function handleCollection(interaction) {
 async function handleCollectionInteraction(interaction) {
   const customId = interaction.customId;
 
+  // ── UserSelectMenu : un membre a été sélectionné ──────────────────────────
+  if (customId.startsWith('gr_coll_user_select_')) {
+    const requesterId = customId.replace('gr_coll_user_select_', '');
+    if (interaction.user.id !== requesterId) {
+      return interaction.reply({ content: "❌ Ce n'est pas ta vue !", flags: MessageFlags.Ephemeral });
+    }
+    const targetUser = interaction.users.first();
+    if (!targetUser) return interaction.reply({ content: '❌ Membre introuvable.', flags: MessageFlags.Ephemeral });
+    const targetMember = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+    const targetName = targetMember?.displayName || targetUser.username;
+    return showCollection(interaction, targetUser.id, targetName);
+  }
+
+  // ── Bouton "Ma collection" ────────────────────────────────────────────────
+  if (customId.startsWith('gr_coll_self_')) {
+    const requesterId = customId.replace('gr_coll_self_', '');
+    if (interaction.user.id !== requesterId) {
+      return interaction.reply({ content: "❌ Ce n'est pas ta vue !", flags: MessageFlags.Ephemeral });
+    }
+    const targetMember = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
+    const targetName = targetMember?.displayName || interaction.user.username;
+    return showCollection(interaction, interaction.user.id, targetName);
+  }
+
+  // ── StringSelectMenu : détail d'une carte ────────────────────────────────
   if (customId.startsWith('gr_coll_card_')) {
     const viewerId = customId.replace('gr_coll_card_', '');
-    if (interaction.user.id !== viewerId) return interaction.reply({ content: "❌ Ce n'est pas ta vue!", flags: MessageFlags.Ephemeral });
-    const session = collectionSessions.get(viewerId);
-    if (!session) return interaction.reply({ content: '❌ Session expirée.', flags: MessageFlags.Ephemeral });
+    if (interaction.user.id !== viewerId) {
+      return interaction.reply({ content: "❌ Ce n'est pas ta vue!", flags: MessageFlags.Ephemeral });
+    }
+
+    const session = collectionSessions.get(viewerId)
+      ?? restoreSession(viewerId, interaction.guildId, interaction.user.displayName);
 
     const card = session.cardsGrouped[interaction.values[0]]?.card;
     if (!card) return interaction.reply({ content: '❌ Carte introuvable.', flags: MessageFlags.Ephemeral });
@@ -394,99 +556,64 @@ async function handleCollectionInteraction(interaction) {
       .setFooter({ text: "Paris Saint-Germain • Ici c'est Paris", iconURL: PSG_FOOTER_ICON });
 
     const imageFile = getCardImageFile(card);
-    if (imageFile) { embed.setImage(`attachment://${imageFile.name}`); return interaction.reply({ embeds: [embed], files: [imageFile], flags: MessageFlags.Ephemeral }); }
+    if (imageFile) {
+      embed.setImage(`attachment://${imageFile.name}`);
+      return interaction.reply({ embeds: [embed], files: [imageFile], flags: MessageFlags.Ephemeral });
+    }
     const cardImageUrl = getCardImageUrlLocal(card);
     if (cardImageUrl) embed.setImage(cardImageUrl);
     else embed.setThumbnail(getRarityCardImage(card.rareté || 'Basic'));
     return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
   }
 
+  // ── Boutons pagination ────────────────────────────────────────────────────
   if (customId.startsWith('gr_coll_prev_') || customId.startsWith('gr_coll_next_') || customId.startsWith('gr_coll_refresh_')) {
     const isPrev = customId.startsWith('gr_coll_prev_');
     const isNext = customId.startsWith('gr_coll_next_');
     const viewerId = customId.replace(/^gr_coll_(prev|next|refresh)_/, '');
-    if (interaction.user.id !== viewerId) return interaction.reply({ content: "❌ Ce n'est pas ta vue!", flags: MessageFlags.Ephemeral });
-    const session = collectionSessions.get(viewerId);
-    if (!session) return interaction.reply({ content: '❌ Session expirée.', flags: MessageFlags.Ephemeral });
+    if (interaction.user.id !== viewerId) {
+      return interaction.reply({ content: "❌ Ce n'est pas ta vue!", flags: MessageFlags.Ephemeral });
+    }
+
+    const session = collectionSessions.get(viewerId)
+      ?? restoreSession(viewerId, interaction.guildId, interaction.user.displayName);
 
     if (isPrev) session.currentPage = Math.max(0, session.currentPage - 1);
     else if (isNext) session.currentPage = Math.min(session.pages.length - 1, session.currentPage + 1);
     else {
+      // Actualiser
       const fresh = getUserCardsGrouped(session.guildId, session.userId);
+      const freshUserData = getUserData(session.guildId, session.userId);
       session.cardsGrouped = fresh;
       session.pages = organizeCardsByRarity(fresh);
       session.totalUnique = Object.keys(fresh).length;
       session.totalCards = Object.values(fresh).reduce((s, d) => s + d.count, 0);
-      session.currentPage = Math.min(session.currentPage, session.pages.length - 1);
+      session.targetCoins = freshUserData.coins;
+      session.currentPage = Math.min(session.currentPage, Math.max(0, session.pages.length - 1));
+      session.expireAt = Date.now() + 15 * 60 * 1000;
     }
 
     return interaction.update({
-      embeds: [createCollectionEmbed(session.userName, session.pages[session.currentPage], session.currentPage + 1, session.pages.length, session.totalUnique, session.totalCards)],
+      embeds: [createCollectionEmbed(
+        session.userName,
+        session.pages[session.currentPage],
+        session.currentPage + 1,
+        session.pages.length,
+        session.totalUnique,
+        session.totalCards,
+        session.targetCoins,
+        session.isSelf,
+      )],
       components: buildCollectionComponents(session.pages, session.currentPage, session.pages.length, session.cardsGrouped, viewerId),
     });
   }
-}
-
-// ─── COMMANDE SLASH /collection ──────────────────────────────────────────────
-
-async function handleCollectionSlash(interaction, membre = null) {
-  const guildId = interaction.guildId;
-  const { loadServerConfig } = require('../utils/permissions');
-  const config = loadServerConfig(guildId);
-
-  const collectionChannels = config?.channels?.collection || [];
-
-  if (collectionChannels.length > 0 && !collectionChannels.includes(String(interaction.channelId))) {
-    const allowedList = collectionChannels
-      .map(id => interaction.guild.channels.cache.get(id)?.toString())
-      .filter(Boolean)
-      .join(', ');
-    return interaction.reply({
-      embeds: [new EmbedBuilder()
-        .setTitle('❌ Salon non autorisé')
-        .setDescription(`Cette commande ne peut pas être utilisée dans ce salon.\n\n➡️ **Utilise plutôt :** ${allowedList || 'un salon configuré'}`)
-        .setColor(PSG_RED)],
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-
-  const targetUser = membre?.user || interaction.user;
-  const targetMember = membre || interaction.member;
-  const userId = targetUser.id;
-  const viewerId = interaction.user.id;
-  const cardsGrouped = getUserCardsGrouped(guildId, userId);
-
-  if (!Object.keys(cardsGrouped).length) {
-    return interaction.reply({
-      embeds: [new EmbedBuilder()
-        .setTitle(`📋 Collection de ${targetMember.displayName || targetUser.username}`)
-        .setDescription('🔭 Cette collection est vide!\n\nAchète des packs pour commencer ta collection!')
-        .setColor(PSG_BLUE)
-        .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON })],
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-
-  const pages = organizeCardsByRarity(cardsGrouped);
-  const totalUnique = Object.keys(cardsGrouped).length;
-  const totalCards = Object.values(cardsGrouped).reduce((s, d) => s + d.count, 0);
-  const userName = targetMember.displayName || targetUser.username;
-
-  collectionSessions.set(viewerId, { guildId, userId, userName, cardsGrouped, pages, currentPage: 0, totalUnique, totalCards });
-
-  return interaction.reply({
-    embeds: [createCollectionEmbed(userName, pages[0], 1, pages.length, totalUnique, totalCards)],
-    components: buildCollectionComponents(pages, 0, pages.length, cardsGrouped, viewerId),
-    flags: MessageFlags.Ephemeral,
-  });
 }
 
 module.exports = {
   sendGamingRoomEmbed,
   handleBoosters,
   handleBuyPack,
-  handlePortefeuille,
+  handlePortefeuille: () => {}, // conservé pour compatibilité ascendante, ne fait plus rien
   handleCollection,
-  handleCollectionSlash,
   handleCollectionInteraction,
 };
