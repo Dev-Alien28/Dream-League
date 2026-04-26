@@ -1,0 +1,893 @@
+[
+  {
+    "id": "joueur_gk_navas_basic_001",
+    "type": "joueur",
+    "nom": "Keylor Navas 19/20 Home",
+    "rareté": "Basic",
+    "position": "Gardien",
+    "stats": {"physique": 84, "agilité": 84, "arrêt": 86},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_gk_donnarumma_fourth_basic_002",
+    "type": "joueur",
+    "nom": "Gianluigi Donnarumma 24/25 Fourth",
+    "rareté": "Basic",
+    "position": "Gardien",
+    "stats": {"physique": 83, "agilité": 85, "arrêt": 86},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_gk_sirigu_basic_003",
+    "type": "joueur",
+    "nom": "Salvatore Sirigu 14/15 Third",
+    "rareté": "Basic",
+    "position": "Gardien",
+    "stats": {"physique": 80, "agilité": 82, "arrêt": 83},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_gk_navas_adv_004",
+    "type": "joueur",
+    "nom": "Keylor Navas 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Gardien",
+    "stats": {"physique": 87, "agilité": 87, "arrêt": 89},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_gk_donnarumma_fourth_adv_005",
+    "type": "joueur",
+    "nom": "Gianluigi Donnarumma 24/25 Fourth",
+    "rareté": "Advanced",
+    "position": "Gardien",
+    "stats": {"physique": 86, "agilité": 88, "arrêt": 89},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_gk_sirigu_adv_006",
+    "type": "joueur",
+    "nom": "Salvatore Sirigu 14/15 Third",
+    "rareté": "Advanced",
+    "position": "Gardien",
+    "stats": {"physique": 83, "agilité": 85, "arrêt": 86},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_gk_navas_elite_007",
+    "type": "joueur",
+    "nom": "Keylor Navas 19/20 Home",
+    "rareté": "Elite",
+    "position": "Gardien",
+    "stats": {"physique": 90, "agilité": 90, "arrêt": 92},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_gk_donnarumma_fourth_elite_008",
+    "type": "joueur",
+    "nom": "Gianluigi Donnarumma 24/25 Fourth",
+    "rareté": "Elite",
+    "position": "Gardien",
+    "stats": {"physique": 89, "agilité": 91, "arrêt": 92},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_gk_sirigu_elite_009",
+    "type": "joueur",
+    "nom": "Salvatore Sirigu 14/15 Third",
+    "rareté": "Elite",
+    "position": "Gardien",
+    "stats": {"physique": 86, "agilité": 88, "arrêt": 89},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_silva_third_basic_010",
+    "type": "joueur",
+    "nom": "Thiago Silva 14/15 Third",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {"intelligence": 84, "pression": 87, "physique": 86},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_maxwell_third_basic_011",
+    "type": "joueur",
+    "nom": "Maxwell 14/15 Third",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {"intelligence": 85, "pression": 85, "physique": 86},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_marquinhos_home_basic_012",
+    "type": "joueur",
+    "nom": "Marquinhos 19/20 Home",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {"intelligence": 84, "pression": 86, "physique": 85},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_bernat_home_basic_013",
+    "type": "joueur",
+    "nom": "Juan Bernat 19/20 Home",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {"intelligence": 84, "pression": 84, "physique": 83},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_mendes_fourth_basic_014",
+    "type": "joueur",
+    "nom": "Nuno Mendes 24/25 Fourth",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {"intelligence": 82, "pression": 84, "physique": 83},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_kimpembe_home_basic_015",
+    "type": "joueur",
+    "nom": "Presnel Kimpembe 19/20 Home",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {"intelligence": 80, "pression": 83, "physique": 84},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_pacho_fourth_basic_016",
+    "type": "joueur",
+    "nom": "Willian Pacho 24/25 Fourth",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {"intelligence": 81, "pression": 83, "physique": 82},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_wiel_third_basic_017",
+    "type": "joueur",
+    "nom": "Gregory van der Wiel 14/15 Third",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {"intelligence": 79, "pression": 80, "physique": 82},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_kehrer_home_basic_018",
+    "type": "joueur",
+    "nom": "Thilo Kehrer 19/20 Home",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {"intelligence": 76, "pression": 78, "physique": 80},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_kurzawa_home_basic_019",
+    "type": "joueur",
+    "nom": "Layvin Kurzawa 19/20 Home",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {"intelligence": 74, "pression": 76, "physique": 77},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_nianzou_home_basic_020",
+    "type": "joueur",
+    "nom": "Tanguy Nianzou 19/20 Home",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {"intelligence": 72, "pression": 74, "physique": 76},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_silva_third_adv_021",
+    "type": "joueur",
+    "nom": "Thiago Silva 14/15 Third",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 87, "pression": 90, "physique": 89},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_maxwell_third_adv_022",
+    "type": "joueur",
+    "nom": "Maxwell 14/15 Third",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 88, "pression": 88, "physique": 89},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_marquinhos_home_adv_023",
+    "type": "joueur",
+    "nom": "Marquinhos 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 87, "pression": 89, "physique": 88},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_bernat_home_adv_024",
+    "type": "joueur",
+    "nom": "Juan Bernat 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 87, "pression": 87, "physique": 86},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_mendes_fourth_adv_025",
+    "type": "joueur",
+    "nom": "Nuno Mendes 24/25 Fourth",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 85, "pression": 87, "physique": 86},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_kimpembe_home_adv_026",
+    "type": "joueur",
+    "nom": "Presnel Kimpembe 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 83, "pression": 86, "physique": 87},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_pacho_fourth_adv_027",
+    "type": "joueur",
+    "nom": "Willian Pacho 24/25 Fourth",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 84, "pression": 86, "physique": 85},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_wiel_third_adv_028",
+    "type": "joueur",
+    "nom": "Gregory van der Wiel 14/15 Third",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 82, "pression": 83, "physique": 85},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_kehrer_home_adv_029",
+    "type": "joueur",
+    "nom": "Thilo Kehrer 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 79, "pression": 81, "physique": 83},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_kurzawa_home_adv_030",
+    "type": "joueur",
+    "nom": "Layvin Kurzawa 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 77, "pression": 79, "physique": 80},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_nianzou_home_adv_031",
+    "type": "joueur",
+    "nom": "Tanguy Nianzou 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 75, "pression": 77, "physique": 79},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_silva_third_elite_032",
+    "type": "joueur",
+    "nom": "Thiago Silva 14/15 Third",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 90, "pression": 93, "physique": 92},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_maxwell_third_elite_033",
+    "type": "joueur",
+    "nom": "Maxwell 14/15 Third",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 91, "pression": 91, "physique": 92},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_marquinhos_home_elite_034",
+    "type": "joueur",
+    "nom": "Marquinhos 19/20 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 90, "pression": 92, "physique": 91},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_bernat_home_elite_035",
+    "type": "joueur",
+    "nom": "Juan Bernat 19/20 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 90, "pression": 90, "physique": 89},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_mendes_fourth_elite_036",
+    "type": "joueur",
+    "nom": "Nuno Mendes 24/25 Fourth",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 88, "pression": 90, "physique": 89},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_kimpembe_home_elite_037",
+    "type": "joueur",
+    "nom": "Presnel Kimpembe 19/20 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 86, "pression": 89, "physique": 90},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_pacho_fourth_elite_038",
+    "type": "joueur",
+    "nom": "Willian Pacho 24/25 Fourth",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 87, "pression": 89, "physique": 88},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_wiel_third_elite_039",
+    "type": "joueur",
+    "nom": "Gregory van der Wiel 14/15 Third",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 85, "pression": 86, "physique": 88},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_kehrer_home_elite_040",
+    "type": "joueur",
+    "nom": "Thilo Kehrer 19/20 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 82, "pression": 84, "physique": 86},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_kurzawa_home_elite_041",
+    "type": "joueur",
+    "nom": "Layvin Kurzawa 19/20 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 80, "pression": 82, "physique": 83},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_nianzou_home_elite_042",
+    "type": "joueur",
+    "nom": "Tanguy Nianzou 19/20 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 78, "pression": 80, "physique": 82},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_verratti_third_basic_043",
+    "type": "joueur",
+    "nom": "Marco Verratti 14/15 Third",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {"technique": 84, "intelligence": 86, "contrôle": 87},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_vitinha_fourth_basic_044",
+    "type": "joueur",
+    "nom": "Vitinha 24/25 Fourth",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {"technique": 82, "intelligence": 84, "contrôle": 83},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_motta_third_basic_045",
+    "type": "joueur",
+    "nom": "Thiago Motta 14/15 Third",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {"technique": 80, "intelligence": 85, "contrôle": 84},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_matuidi_third_basic_046",
+    "type": "joueur",
+    "nom": "Blaise Matuidi 14/15 Third",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {"technique": 79, "intelligence": 84, "contrôle": 84},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_neves_night_basic_047",
+    "type": "joueur",
+    "nom": "João Neves 25/26 Night",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {"technique": 81, "intelligence": 81, "contrôle": 82},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_paredes_home_basic_048",
+    "type": "joueur",
+    "nom": "Leandro Paredes 19/20 Home",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {"technique": 79, "intelligence": 82, "contrôle": 82},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_rabiot_third_basic_049",
+    "type": "joueur",
+    "nom": "Adrien Rabiot 14/15 Third",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {"technique": 77, "intelligence": 79, "contrôle": 80},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_gueye_home_basic_050",
+    "type": "joueur",
+    "nom": "Idrissa Gueye 19/20 Home",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {"technique": 76, "intelligence": 82, "contrôle": 78},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_verratti_third_adv_051",
+    "type": "joueur",
+    "nom": "Marco Verratti 14/15 Third",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 87, "intelligence": 89, "contrôle": 90},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_vitinha_fourth_adv_052",
+    "type": "joueur",
+    "nom": "Vitinha 24/25 Fourth",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 85, "intelligence": 87, "contrôle": 86},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_motta_third_adv_053",
+    "type": "joueur",
+    "nom": "Thiago Motta 14/15 Third",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 83, "intelligence": 88, "contrôle": 87},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_matuidi_third_adv_054",
+    "type": "joueur",
+    "nom": "Blaise Matuidi 14/15 Third",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 82, "intelligence": 87, "contrôle": 87},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_neves_night_adv_055",
+    "type": "joueur",
+    "nom": "João Neves 25/26 Night",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 84, "intelligence": 84, "contrôle": 85},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_paredes_home_adv_056",
+    "type": "joueur",
+    "nom": "Leandro Paredes 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 82, "intelligence": 85, "contrôle": 85},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_rabiot_third_adv_057",
+    "type": "joueur",
+    "nom": "Adrien Rabiot 14/15 Third",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 80, "intelligence": 82, "contrôle": 83},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_gueye_home_adv_058",
+    "type": "joueur",
+    "nom": "Idrissa Gueye 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 79, "intelligence": 85, "contrôle": 81},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_verratti_third_elite_059",
+    "type": "joueur",
+    "nom": "Marco Verratti 14/15 Third",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 90, "intelligence": 92, "contrôle": 93},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_vitinha_fourth_elite_060",
+    "type": "joueur",
+    "nom": "Vitinha 24/25 Fourth",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 88, "intelligence": 90, "contrôle": 89},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_motta_third_elite_061",
+    "type": "joueur",
+    "nom": "Thiago Motta 14/15 Third",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 86, "intelligence": 91, "contrôle": 90},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_matuidi_third_elite_062",
+    "type": "joueur",
+    "nom": "Blaise Matuidi 14/15 Third",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 85, "intelligence": 90, "contrôle": 90},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_neves_night_elite_063",
+    "type": "joueur",
+    "nom": "João Neves 25/26 Night",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 87, "intelligence": 87, "contrôle": 88},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_paredes_home_elite_064",
+    "type": "joueur",
+    "nom": "Leandro Paredes 19/20 Home",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 85, "intelligence": 88, "contrôle": 88},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_rabiot_third_elite_065",
+    "type": "joueur",
+    "nom": "Adrien Rabiot 14/15 Third",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 83, "intelligence": 85, "contrôle": 86},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_gueye_home_elite_066",
+    "type": "joueur",
+    "nom": "Idrissa Gueye 19/20 Home",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 82, "intelligence": 88, "contrôle": 84},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_neymar_home_basic_067",
+    "type": "joueur",
+    "nom": "Neymar Jr 19/20 Home",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {"frappe": 85, "technique": 88, "contrôle": 87},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_dembele_fourth_basic_068",
+    "type": "joueur",
+    "nom": "Ousmane Dembélé 24/25 Fourth",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {"frappe": 84, "technique": 87, "contrôle": 86},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_dimaria_home_basic_069",
+    "type": "joueur",
+    "nom": "Ángel Di María 19/20 Home",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {"frappe": 83, "technique": 85, "contrôle": 86},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_kvara_night_basic_070",
+    "type": "joueur",
+    "nom": "Khvicha Kvaratskhelia 25/26 Night",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {"frappe": 85, "technique": 84, "contrôle": 84},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_doue_fourth_basic_071",
+    "type": "joueur",
+    "nom": "Désiré Doué 24/25 Fourth",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {"frappe": 83, "technique": 85, "contrôle": 84},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_pastore_third_basic_072",
+    "type": "joueur",
+    "nom": "Javier Pastore 14/15 Third",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {"frappe": 80, "technique": 88, "contrôle": 84},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_barcola_night_basic_073",
+    "type": "joueur",
+    "nom": "Bradley Barcola 25/26 Night",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {"frappe": 84, "technique": 82, "contrôle": 84},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_cavani_third_basic_074",
+    "type": "joueur",
+    "nom": "Edinson Cavani 14/15 Third",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {"frappe": 84, "technique": 78, "contrôle": 79},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_lavezzi_third_basic_075",
+    "type": "joueur",
+    "nom": "Ezequiel Lavezzi 14/15 Third",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {"frappe": 80, "technique": 81, "contrôle": 80},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_ramos_fourth_basic_076",
+    "type": "joueur",
+    "nom": "Gonçalo Ramos 24/25 Fourth",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {"frappe": 82, "technique": 78, "contrôle": 79},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_sarabia_home_basic_077",
+    "type": "joueur",
+    "nom": "Pablo Sarabia 19/20 Home",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {"frappe": 78, "technique": 80, "contrôle": 79},
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_neymar_home_adv_078",
+    "type": "joueur",
+    "nom": "Neymar Jr 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 88, "technique": 91, "contrôle": 90},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_dembele_fourth_adv_079",
+    "type": "joueur",
+    "nom": "Ousmane Dembélé 24/25 Fourth",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 87, "technique": 90, "contrôle": 89},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_dimaria_home_adv_080",
+    "type": "joueur",
+    "nom": "Ángel Di María 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 86, "technique": 88, "contrôle": 89},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_kvara_night_adv_081",
+    "type": "joueur",
+    "nom": "Khvicha Kvaratskhelia 25/26 Night",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 88, "technique": 87, "contrôle": 87},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_doue_fourth_adv_082",
+    "type": "joueur",
+    "nom": "Désiré Doué 24/25 Fourth",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 86, "technique": 88, "contrôle": 87},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_pastore_third_adv_083",
+    "type": "joueur",
+    "nom": "Javier Pastore 14/15 Third",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 83, "technique": 91, "contrôle": 87},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_barcola_night_adv_084",
+    "type": "joueur",
+    "nom": "Bradley Barcola 25/26 Night",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 87, "technique": 85, "contrôle": 87},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_cavani_third_adv_085",
+    "type": "joueur",
+    "nom": "Edinson Cavani 14/15 Third",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 87, "technique": 81, "contrôle": 82},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_lavezzi_third_adv_086",
+    "type": "joueur",
+    "nom": "Ezequiel Lavezzi 14/15 Third",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 83, "technique": 84, "contrôle": 83},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_ramos_fourth_adv_087",
+    "type": "joueur",
+    "nom": "Gonçalo Ramos 24/25 Fourth",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 85, "technique": 81, "contrôle": 82},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_sarabia_home_adv_088",
+    "type": "joueur",
+    "nom": "Pablo Sarabia 19/20 Home",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 81, "technique": 83, "contrôle": 82},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_neymar_home_elite_089",
+    "type": "joueur",
+    "nom": "Neymar Jr 19/20 Home",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 91, "technique": 94, "contrôle": 93},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_dembele_fourth_elite_090",
+    "type": "joueur",
+    "nom": "Ousmane Dembélé 24/25 Fourth",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 90, "technique": 93, "contrôle": 92},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_dimaria_home_elite_091",
+    "type": "joueur",
+    "nom": "Ángel Di María 19/20 Home",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 89, "technique": 91, "contrôle": 92},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_kvara_night_elite_092",
+    "type": "joueur",
+    "nom": "Khvicha Kvaratskhelia 25/26 Night",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 91, "technique": 90, "contrôle": 90},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_doue_fourth_elite_093",
+    "type": "joueur",
+    "nom": "Désiré Doué 24/25 Fourth",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 89, "technique": 91, "contrôle": 90},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_pastore_third_elite_094",
+    "type": "joueur",
+    "nom": "Javier Pastore 14/15 Third",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 86, "technique": 94, "contrôle": 90},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_barcola_night_elite_095",
+    "type": "joueur",
+    "nom": "Bradley Barcola 25/26 Night",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 90, "technique": 88, "contrôle": 90},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_cavani_third_elite_096",
+    "type": "joueur",
+    "nom": "Edinson Cavani 14/15 Third",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 90, "technique": 84, "contrôle": 85},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_lavezzi_third_elite_097",
+    "type": "joueur",
+    "nom": "Ezequiel Lavezzi 14/15 Third",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 85, "technique": 86, "contrôle": 85},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_ramos_fourth_elite_098",
+    "type": "joueur",
+    "nom": "Gonçalo Ramos 24/25 Fourth",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 88, "technique": 84, "contrôle": 85},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_sarabia_home_elite_099",
+    "type": "joueur",
+    "nom": "Pablo Sarabia 19/20 Home",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 82, "technique": 83, "contrôle": 81},
+    "image": "images/cards/Carte_3.png"
+  }
+]

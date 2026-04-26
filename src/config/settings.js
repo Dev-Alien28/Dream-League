@@ -9,7 +9,6 @@ if (!TOKEN) {
 }
 
 // ✅ Chemins absolus — fonctionnent peu importe d'où Node.js est lancé
-// __dirname = src/config/, on remonte 1 fois pour atteindre src/
 const ROOT_DIR   = path.resolve(__dirname, '..');
 const DATA_DIR   = path.join(ROOT_DIR, 'data');
 const PACKS_DIR  = path.join(DATA_DIR, 'packs');
@@ -57,6 +56,16 @@ const RARITIES = {
     color: 0xFFD700,
     name: 'Unique',
   },
+  Give: {
+    emoji: '🎁',
+    color: 0xFF0000,
+    name: 'Give',
+  },
+  Encounter: {
+    emoji: '👔',
+    color: 0xFDF1B8,
+    name: 'Encounter',
+  },
 };
 
 // ============================================
@@ -66,10 +75,10 @@ const CARD_TYPES = {
   joueur: {
     emoji: '⚽',
     positions: {
-      Gardien:   ['physique', 'agilite', 'arret'],
+      Gardien:   ['physique', 'agilité', 'arrêt'],
       Défenseur: ['intelligence', 'pression', 'physique'],
-      Milieu:    ['technique', 'intelligence', 'controle'],
-      Attaquant: ['frappe', 'technique', 'controle'],
+      Milieu:    ['technique', 'intelligence', 'contrôle'],
+      Attaquant: ['frappe', 'technique', 'contrôle'],
     },
   },
   collectible: {
@@ -84,10 +93,23 @@ const CARD_TYPES = {
 const PACKS_CONFIG = {
   psg_start: {
     nom: 'PSG Start',
-    prix: 25,
+    prix: 50,
     description: "Set de base composé des joueurs des saisons 24/25 et 25/26, obtenez des joueurs de la rareté 'Elite' surpuissants comme Hakimi, Dembélé ou Vitinha",
     fichier: 'psg_start.json',
     emoji: '🔴🔵',
+    drop_rates: {
+      Basic:    70,
+      Advanced: 25,
+      Elite:     5,
+      Unique:    0,
+    },
+  },
+  psg_11_03: {
+    nom: '11/03 is magic',
+    prix: 100,
+    description: 'Retrouvez tous les joueurs ayant vécu la célèbre date du 11/03',
+    fichier: 'pack_11_03.json',
+    emoji: '🪄',
     drop_rates: {
       Basic:    70,
       Advanced: 25,
@@ -110,7 +132,7 @@ const PACKS_CONFIG = {
   pack_event: {
     nom: 'Pack Événement',
     prix: 0,
-    description: 'Pack exclusif du mini-jeu',
+    description: 'Pack exclusif du mini-jeu (fallback si pack_encounter.json absent)',
     fichier: 'pack_event.json',
     emoji: '✨',
     drop_rates: {
@@ -121,15 +143,11 @@ const PACKS_CONFIG = {
 };
 
 // ============================================
-// MINI-JEU
+// PSG ENCOUNTER
 // ============================================
 const MINIGAME_CONFIG = {
-  min_interval_days: 4,
-  max_interval_days: 7,
-  start_hour: 7,
-  end_hour: 24,
-  timeout: 30,
-  reward_pack: 'pack_event',
+  timeout: 60,
+  reward_pack: 'pack_encounter',
 };
 
 // ============================================
@@ -137,23 +155,21 @@ const MINIGAME_CONFIG = {
 // ============================================
 const EXEMPLE_PACKS = {
   'psg_start.json': [
-    { id: 'gk_donnarumma_basic',  type: 'joueur', nom: 'Gianluigi Donnarumma 24/25',    rareté: 'Basic',    position: 'Gardien',   stats: { physique: 83, agilite: 85, arret: 85 },                  image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
-    { id: 'gk_chevalier_basic',   type: 'joueur', nom: 'Lucas Chevalier 25/26',          rareté: 'Basic',    position: 'Gardien',   stats: { physique: 76, agilite: 79, arret: 78 },                  image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
-    { id: 'def_hakimi_basic',     type: 'joueur', nom: 'Achraf Hakimi 24/25 Home',       rareté: 'Basic',    position: 'Défenseur', stats: { intelligence: 83, pression: 83, physique: 85 },           image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
-    { id: 'def_mendes_basic',     type: 'joueur', nom: 'Nuno Mendes 25/26 Home',         rareté: 'Basic',    position: 'Défenseur', stats: { intelligence: 83, pression: 85, physique: 83 },           image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
-    { id: 'mid_vitinha_basic',    type: 'joueur', nom: 'Vitinha 25/26 Fourth',           rareté: 'Basic',    position: 'Milieu',    stats: { technique: 83, intelligence: 84, controle: 85 },          image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
-    { id: 'att_dembele_basic',    type: 'joueur', nom: 'Ousmane Dembélé 25/26 Home',     rareté: 'Basic',    position: 'Attaquant', stats: { frappe: 83, technique: 86, controle: 85 },                image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
-    { id: 'gk_donnarumma_adv',    type: 'joueur', nom: 'Gianluigi Donnarumma 24/25',    rareté: 'Advanced', position: 'Gardien',   stats: { physique: 86, agilite: 88, arret: 88 },                  image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/2048px-Paris_Saint-Germain_Logo.svg.png' },
-    { id: 'gk_donnarumma_elite',  type: 'joueur', nom: 'Gianluigi Donnarumma 24/25',    rareté: 'Elite',    position: 'Gardien',   stats: { physique: 89, agilite: 91, arret: 91 },                  image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/2048px-Paris_Saint-Germain_Logo.svg.png' },
-    { id: 'coll_enrique',         type: 'collectible', nom: 'Luis Enrique',              rareté: 'Unique',   stats: { prestige: 95, annee: 2024, rarete: 99 },                                        image: 'https://upload.wikimedia.org/wikipedia/commons/4/43/PSG_logo_logotype.png' },
-    { id: 'coll_ucl',             type: 'collectible', nom: 'The Champions League 2024/2025', rareté: 'Unique', stats: { prestige: 100, annee: 2025, rarete: 100 },                                   image: 'https://upload.wikimedia.org/wikipedia/commons/4/43/PSG_logo_logotype.png' },
+    { id: 'gk_donnarumma_basic',  type: 'joueur', nom: 'Gianluigi Donnarumma 24/25',    rareté: 'Basic',    position: 'Gardien',   stats: { physique: 83, 'agilité': 85, 'arrêt': 85 },                  image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
+    { id: 'gk_chevalier_basic',   type: 'joueur', nom: 'Lucas Chevalier 25/26',          rareté: 'Basic',    position: 'Gardien',   stats: { physique: 76, 'agilité': 79, 'arrêt': 78 },                  image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
+    { id: 'def_hakimi_basic',     type: 'joueur', nom: 'Achraf Hakimi 24/25 Home',       rareté: 'Basic',    position: 'Défenseur', stats: { intelligence: 83, pression: 83, physique: 85 },               image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
+    { id: 'att_dembele_basic',    type: 'joueur', nom: 'Ousmane Dembélé 25/26 Home',     rareté: 'Basic',    position: 'Attaquant', stats: { frappe: 83, technique: 86, 'contrôle': 85 },                  image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
+    { id: 'gk_donnarumma_elite',  type: 'joueur', nom: 'Gianluigi Donnarumma 24/25',    rareté: 'Elite',    position: 'Gardien',   stats: { physique: 89, 'agilité': 91, 'arrêt': 91 },                  image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/2048px-Paris_Saint-Germain_Logo.svg.png' },
+    { id: 'coll_ucl',             type: 'collectible', nom: 'The Champions League 2024/2025', rareté: 'Unique', stats: { prestige: 100, annee: 2025, rarete: 100 },                                       image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
   ],
   'free_pack.json': [
-    { id: 'gk_tenas_basic', type: 'joueur', nom: 'Arnau Tenas 24/25', rareté: 'Basic', position: 'Gardien', stats: { physique: 71, agilite: 75, arret: 72 }, image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
+    { id: 'gk_tenas_basic', type: 'joueur', nom: 'Arnau Tenas 24/25', rareté: 'Basic', position: 'Gardien', stats: { physique: 71, 'agilité': 75, 'arrêt': 72 }, image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/1200px-Paris_Saint-Germain_Logo.svg.png' },
   ],
   'pack_event.json': [
-    { id: 'att_dembele_elite', type: 'joueur', nom: 'Ousmane Dembélé 25/26 Home', rareté: 'Elite', position: 'Attaquant', stats: { frappe: 89, technique: 92, controle: 91 }, image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/2048px-Paris_Saint-Germain_Logo.svg.png' },
+    { id: 'att_dembele_elite', type: 'joueur', nom: 'Ousmane Dembélé 25/26 Home', rareté: 'Elite', position: 'Attaquant', stats: { frappe: 89, technique: 92, 'contrôle': 91 }, image: 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/2048px-Paris_Saint-Germain_Logo.svg.png' },
   ],
+  // pack_encounter.json : à créer manuellement avec { nom, rareté, stats, questions: [{question, answers, correct}] }
+  // pack_11_03.json : à créer manuellement avec les joueurs du 11/03
 };
 
 const PSG_FOOTER_ICON = 'https://upload.wikimedia.org/wikipedia/fr/thumb/8/86/Paris_Saint-Germain_Logo.svg/2048px-Paris_Saint-Germain_Logo.svg.png';

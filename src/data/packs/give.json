@@ -1,0 +1,38 @@
+[
+  {
+    "id": "give_gk_letellier_2122",
+    "type": "joueur",
+    "nom": "Alexandre Letellier 21/22",
+    "rareté": "Give",
+    "position": "Gardien",
+    "stats": {"physique": 81, "agilité": 84, "arrêt": 83},
+    "image": "images/cards/Give.png"
+  },
+  {
+    "id": "give_def_silva_1819",
+    "type": "joueur",
+    "nom": "Thiago Silva 18/19 Third",
+    "rareté": "Give",
+    "position": "Défenseur",
+    "stats": {"intelligence": 89, "pression": 86, "physique": 85},
+    "image": "images/cards/Give.png"
+  },
+  {
+    "id": "give_mid_marquinhos_tuchel",
+    "type": "joueur",
+    "nom": "Marquinhos (Tuchel Era)",
+    "rareté": "Give",
+    "position": "Milieu",
+    "stats": {"technique": 84, "intelligence": 89, "contrôle": 87},
+    "image": "images/cards/Give.png"
+  },
+  {
+    "id": "give_att_anelka_0001",
+    "type": "joueur",
+    "nom": "Nicolas Anelka 00/01 Away",
+    "rareté": "Give",
+    "position": "Attaquant",
+    "stats": {"frappe": 87, "technique": 84, "contrôle": 83},
+    "image": "images/cards/Give.png"
+  }
+]
