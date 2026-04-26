@@ -1,8 +1,9 @@
 // src/handlers/commands.js - Routeur central des slash commands et interactions
 const { MessageFlags } = require('discord.js');
 const { logCommandUse } = require('../utils/logs');
+const { rappelCommand } = require('../commands/rappel');
 
-const { addCoinsCommand, removeCoinsCommand, setCoinsCommand } = require('../commands/admin');
+const { addCoinsCommand, removeCoinsCommand, setCoinsCommand, removeCardCommand, handleRemoveCardInteraction } = require('../commands/admin');
 const { giveCommand } = require('../commands/give');
 const { configCommand, handleConfigInteraction } = require('../commands/config');
 const { handleMinigameAnswer } = require('../commands/minigame');
@@ -49,8 +50,16 @@ function setupCommands(client) {
             await giveCommand(interaction, carteId, membre, raison);
             break;
           }
+          case 'removecard': {
+            const membre = interaction.options.getMember('membre');
+            await removeCardCommand(interaction, membre);
+            break;
+          }
           case 'config':
             await configCommand(interaction);
+            break;
+          case 'rappel':
+            await rappelCommand(interaction);
             break;
           default:
             await interaction.reply({ content: '❌ Commande inconnue.', flags: MessageFlags.Ephemeral });
@@ -60,7 +69,7 @@ function setupCommands(client) {
 
       } catch (error) {
         console.error(`❌ Erreur commande /${commandName}:`, error);
-        const errMsg = { content: '❌ Une erreur est survenue lors de l\'exécution de cette commande.', flags: MessageFlags.Ephemeral };
+        const errMsg = { content: "❌ Une erreur est survenue lors de l'exécution de cette commande.", flags: MessageFlags.Ephemeral };
         try {
           if (interaction.replied || interaction.deferred) await interaction.followUp(errMsg);
           else await interaction.reply(errMsg);
@@ -73,6 +82,10 @@ function setupCommands(client) {
       const { customId } = interaction;
 
       try {
+        // ── Admin removecard ──
+        if (customId.startsWith('admin_removecard_')) { await handleRemoveCardInteraction(interaction); return; }
+
+        // ── Gaming Room ──
         if (customId === 'gr_boosters')     { await handleBoosters(interaction); return; }
         if (customId === 'gr_collection')   { await handleCollection(interaction); return; }
         if (customId === 'gr_portefeuille') { await handlePortefeuille(interaction); return; }
@@ -90,7 +103,6 @@ function setupCommands(client) {
           try {
             await handleBuyPack(interaction, packKey);
           } catch (buyError) {
-            // Timeout réseau Discord : la transaction DB est déjà faite, on log et on passe
             if (buyError.code === 'UND_ERR_CONNECT_TIMEOUT' || buyError.name === 'ConnectTimeoutError') {
               console.error(`⚠️ Timeout réseau achat pack (${packKey}) pour ${userId}`);
             } else {
@@ -101,7 +113,14 @@ function setupCommands(client) {
         }
 
         if (customId.startsWith('gr_coll_')) { await handleCollectionInteraction(interaction); return; }
-        if (customId.startsWith('minigame_answer_')) { await handleMinigameAnswer(interaction); return; }
+
+        // ── Minigame / Encounter ──
+        if (customId.startsWith('encounter_answer_') || customId.startsWith('minigame_answer_')) {
+          await handleMinigameAnswer(interaction);
+          return;
+        }
+
+        // ── Config ──
         if (customId.startsWith('config_')) { await handleConfigInteraction(interaction); return; }
 
       } catch (error) {
@@ -119,6 +138,9 @@ function setupCommands(client) {
       const { customId } = interaction;
 
       try {
+        // ── Admin removecard ──
+        if (customId.startsWith('admin_removecard_')) { await handleRemoveCardInteraction(interaction); return; }
+
         if (customId.startsWith('gr_coll_'))  { await handleCollectionInteraction(interaction); return; }
         if (customId.startsWith('config_'))   { await handleConfigInteraction(interaction); return; }
 

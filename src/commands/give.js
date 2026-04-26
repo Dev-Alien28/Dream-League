@@ -2,13 +2,13 @@
 const { EmbedBuilder, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { getUserData, saveUserData, findCardById, getPackAnnounceChannel } = require('../utils/database');
 const { checkRolePermission } = require('../utils/permissions');
-const { PSG_GREEN, PSG_RED, PSG_FOOTER_ICON } = require('../config/settings');
-const { getRarityEmoji, getRarityColor, getRarityCardImage, formatCardStats } = require('../utils/cardHelpers');
+const { PSG_GREEN, PSG_RED, PSG_FOOTER_ICON, CARD_TYPES } = require('../config/settings');
+const { getRarityEmoji, getRarityColor, formatCardStats } = require('../utils/cardHelpers');
 const { logGiveCard } = require('../utils/logs');
 const fs = require('fs');
 const path = require('path');
 
-// ─── Helpers image (même pattern que gaming_room.js) ─────────────────────────
+// ─── Helpers image ────────────────────────────────────────────────────────────
 
 function getCardImageFile(card) {
   const imagePath = card.image || '';
@@ -64,22 +64,22 @@ async function giveCommand(interaction, carteId, membre, raison = null) {
   userData.collection.push(card);
   saveUserData(guildId, userId, userData);
 
-  const CARD_TYPES = require('../config/settings').CARD_TYPES || {};
   const typeEmoji = CARD_TYPES[card.type]?.emoji || '🎴';
   const collectionSize = userData.collection.length;
+  const cardCopies = userData.collection.filter(c => c.nom === card.nom && c.rareté === card.rareté).length;
 
-  // ─── Embed carte (même structure que l'ouverture de pack) ─────────────────
+  // ─── Embed carte ───────────────────────────────────────────────────────────
   function buildCardEmbed() {
     const embed = new EmbedBuilder()
-      .setTitle(`🎁 Carte offerte par le Staff !`)
+      .setTitle('🎁 Carte offerte par le Staff !')
       .setDescription(`# 🎴 ${card.nom}`)
       .setColor(getRarityColor(card.rareté))
       .addFields(
         { name: `${typeEmoji} Type`, value: card.type ? card.type.charAt(0).toUpperCase() + card.type.slice(1) : 'Joueur', inline: true },
         { name: '🏆 Rareté', value: `${getRarityEmoji(card.rareté)} ${card.rareté}`, inline: true },
-        { name: '\u200b', value: '\u200b', inline: true },
         { name: '📊 Statistiques', value: formatCardStats(card), inline: false },
         { name: '🎴 Collection', value: `${collectionSize} carte${collectionSize > 1 ? 's' : ''}`, inline: true },
+        { name: '📦 Exemplaires', value: `x${cardCopies}`, inline: true },
       )
       .setFooter({ text: `Donné par ${interaction.user.displayName} • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON });
 
@@ -106,9 +106,13 @@ async function giveCommand(interaction, carteId, membre, raison = null) {
           });
           const attachment = sentMsg.attachments.first();
           if (attachment) cdnImageUrl = attachment.url;
+        } else if (cdnImageUrl) {
+          publicEmbed.setImage(cdnImageUrl);
+          await announceChannel.send({
+            content: `🎉 ${membre} a reçu une carte exclusive du Staff !`,
+            embeds: [publicEmbed],
+          });
         } else {
-          if (cdnImageUrl) publicEmbed.setImage(cdnImageUrl);
-          else publicEmbed.setThumbnail(getRarityCardImage(card.rareté || 'Give'));
           await announceChannel.send({
             content: `🎉 ${membre} a reçu une carte exclusive du Staff !`,
             embeds: [publicEmbed],

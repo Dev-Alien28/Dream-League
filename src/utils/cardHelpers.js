@@ -14,16 +14,7 @@ function getCardTypeEmoji(cardType) {
 }
 
 function getRarityCardImage(rarity) {
-  const fallback = 'https://www.footpack.fr/wp-content/uploads/2025/06/etoile-maillot-psg-800x800-c-center.jpeg';
-  const images = {
-    Basic:    fallback,
-    Advanced: fallback,
-    Elite:    fallback,
-    Unique:   fallback,
-    Legend:   fallback,
-    Give:     fallback,
-  };
-  return images[rarity] || fallback;
+  return null;
 }
 
 function createStatBar(value, maxValue = 100) {

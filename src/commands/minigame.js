@@ -1,32 +1,138 @@
-// src/commands/minigame.js - Mini-jeu Joueur Fuyard
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
-const { loadPackCards, addCardToUser, getMinigameChannel, setMinigameChannel, scheduleNextMinigame, getNextMinigameTime } = require('../utils/database');
-const { PSG_BLUE, PSG_RED, MINIGAME_CONFIG, PACKS_CONFIG, PSG_FOOTER_ICON } = require('../config/settings');
-const { getRarityEmoji, getCardTypeEmoji, formatCardStats, getCardImageUrl, weightedRandom } = require('../utils/cardHelpers');
+// src/commands/minigame.js - Système PSG Encounter
+const {
+  EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, AttachmentBuilder,
+} = require('discord.js');
+const {
+  getMinigameChannel, setMinigameChannel,
+  scheduleNextMinigame, getNextMinigameTime,
+  addCardToUser, loadPackCards,
+  getPackAnnounceChannel, getUserData,
+  getEncounterConfig, formatIntervalMs,
+} = require('../utils/database');
+const {
+  PSG_BLUE, PSG_RED, MINIGAME_CONFIG, PSG_FOOTER_ICON, PACKS_CONFIG, CARD_TYPES,
+} = require('../config/settings');
+const {
+  getRarityColor, getRarityEmoji, formatCardStats, weightedRandom,
+} = require('../utils/cardHelpers');
 const { checkRolePermission } = require('../utils/permissions');
 const { logMinigameWin } = require('../utils/logs');
+const fs   = require('fs');
+const path = require('path');
 
-const PSG_QUESTIONS = [
-  { question: "En quelle année le PSG a-t-il été fondé ?", answers: ["1970", "1965", "1975", "1980"], correct: 0 },
-  { question: "Quel joueur détient le record de buts au PSG ?", answers: ["Zlatan Ibrahimović", "Edinson Cavani", "Kylian Mbappé", "Pauleta"], correct: 1 },
-  { question: "Quel est le surnom du PSG ?", answers: ["Les Rouges", "Les Parisiens", "Les Bleus", "Les Princes"], correct: 1 },
-  { question: "En quelle année le PSG a-t-il atteint sa première finale de Ligue des Champions ?", answers: ["2015", "2018", "2020", "2021"], correct: 2 },
-  { question: "Quel est le nom du stade du PSG ?", answers: ["Stade de France", "Parc des Princes", "Stade Vélodrome", "Allianz Riviera"], correct: 1 },
-  { question: "Qui est le président actuel du PSG ?", answers: ["Jean-Michel Aulas", "Nasser Al-Khelaïfi", "Frank McCourt", "Vincent Labrune"], correct: 1 },
-  { question: "Quel joueur brésilien légendaire a porté le maillot du PSG ?", answers: ["Ronaldo", "Ronaldinho", "Rivaldo", "Romário"], correct: 1 },
-  { question: "Quelle est la capacité du Parc des Princes ?", answers: ["45 000", "48 000", "50 000", "55 000"], correct: 1 },
-  { question: "En quelle année le Qatar a-t-il racheté le PSG ?", answers: ["2009", "2011", "2013", "2015"], correct: 1 },
-  { question: "Quel est le rival historique du PSG ?", answers: ["Lyon", "Marseille", "Monaco", "Lille"], correct: 1 },
-  { question: "Qui est l'entraîneur du PSG depuis 2023 ?", answers: ["Thomas Tuchel", "Mauricio Pochettino", "Luis Enrique", "Christophe Galtier"], correct: 2 },
-  { question: "Quel gardien italien joue au PSG ?", answers: ["Gianluigi Buffon", "Gianluigi Donnarumma", "Salvatore Sirigu", "Mattia Perin"], correct: 1 },
-  { question: "En quelle année Neymar a-t-il rejoint le PSG ?", answers: ["2016", "2017", "2018", "2019"], correct: 1 },
-  { question: "Combien a coûté le transfert de Neymar au PSG ?", answers: ["200 millions", "222 millions", "250 millions", "300 millions"], correct: 1 },
-  { question: "Quel défenseur marocain joue au PSG ?", answers: ["Achraf Hakimi", "Hakim Ziyech", "Noussair Mazraoui", "Romain Saïss"], correct: 0 },
-  { question: "Quel pays représente Marquinhos ?", answers: ["Argentine", "Brésil", "Portugal", "Espagne"], correct: 1 },
-  { question: "En quelle année le PSG a-t-il remporté son premier titre de champion de France ?", answers: ["1986", "1990", "1994", "1998"], correct: 0 },
+const ENCOUNTER_COLOR = 0xFDF1B8;
+
+const PSG_QUESTIONS_FALLBACK = [
+  { question: 'En quelle année le PSG a-t-il été fondé ?',                                          answers: ['1970', '1965', '1975', '1980'],                                              correct: 0 },
+  { question: 'Quel joueur détient le record de buts au PSG ?',                                     answers: ['Zlatan Ibrahimović', 'Edinson Cavani', 'Kylian Mbappé', 'Pauleta'],           correct: 1 },
+  { question: 'Quel est le surnom du PSG ?',                                                        answers: ['Les Rouges', 'Les Parisiens', 'Les Bleus', 'Les Princes'],                    correct: 1 },
+  { question: 'En quelle année le PSG a-t-il atteint sa première finale de Ligue des Champions ?', answers: ['2015', '2018', '2020', '2021'],                                              correct: 2 },
+  { question: 'Quel est le nom du stade du PSG ?',                                                  answers: ['Stade de France', 'Parc des Princes', 'Stade Vélodrome', 'Allianz Riviera'], correct: 1 },
+  { question: 'Qui est le président actuel du PSG ?',                                               answers: ['Jean-Michel Aulas', 'Nasser Al-Khelaïfi', 'Frank McCourt', 'Vincent Labrune'], correct: 1 },
+  { question: 'Quel joueur brésilien légendaire a porté le maillot du PSG ?',                       answers: ['Ronaldo', 'Ronaldinho', 'Rivaldo', 'Romário'],                                correct: 1 },
+  { question: 'Quelle est la capacité du Parc des Princes ?',                                       answers: ['45 000', '48 000', '50 000', '55 000'],                                      correct: 1 },
+  { question: 'En quelle année le Qatar a-t-il racheté le PSG ?',                                   answers: ['2009', '2011', '2013', '2015'],                                              correct: 1 },
+  { question: 'Quel est le rival historique du PSG ?',                                              answers: ['Lyon', 'Marseille', 'Monaco', 'Lille'],                                      correct: 1 },
+  { question: "Qui est l'entraîneur du PSG depuis 2023 ?",                                         answers: ['Thomas Tuchel', 'Mauricio Pochettino', 'Luis Enrique', 'Christophe Galtier'], correct: 2 },
+  { question: 'Quel gardien italien joue au PSG ?',                                                 answers: ['Gianluigi Buffon', 'Gianluigi Donnarumma', 'Salvatore Sirigu', 'Mattia Perin'], correct: 1 },
+  { question: "En quelle année Neymar a-t-il rejoint le PSG ?",                                    answers: ['2016', '2017', '2018', '2019'],                                              correct: 1 },
+  { question: 'Combien a coûté le transfert de Neymar au PSG ?',                                   answers: ['200 millions', '222 millions', '250 millions', '300 millions'],               correct: 1 },
+  { question: 'Quel défenseur marocain joue au PSG ?',                                             answers: ['Achraf Hakimi', 'Hakim Ziyech', 'Noussair Mazraoui', 'Romain Saïss'],        correct: 0 },
+  { question: 'Quel pays représente Marquinhos ?',                                                  answers: ['Argentine', 'Brésil', 'Portugal', 'Espagne'],                                correct: 1 },
+  { question: 'En quelle année le PSG a-t-il remporté son premier titre de champion de France ?',  answers: ['1986', '1990', '1994', '1998'],                                              correct: 0 },
 ];
 
-const activeMinigames = new Map();
+// ─── Chargement des cartes Encounter ─────────────────────────────────────────
+
+function loadEncounterCards() {
+  const filepath = path.join(__dirname, '..', 'data', 'packs', 'pack_encounter.json');
+  if (!fs.existsSync(filepath)) {
+    console.warn('⚠️  pack_encounter.json introuvable — mode questions PSG uniquement');
+    return [];
+  }
+  try {
+    return JSON.parse(fs.readFileSync(filepath, 'utf-8'));
+  } catch (e) {
+    console.error('❌ Erreur lecture pack_encounter.json:', e.message);
+    return [];
+  }
+}
+
+const activeEncounters = new Map();
+
+// ─── Helpers image ────────────────────────────────────────────────────────────
+
+function getCardImageAttachment(card) {
+  const imagePath = card.image || '';
+  if (!imagePath || imagePath.startsWith('http')) return null;
+  const absolutePath = path.join(__dirname, '..', imagePath);
+  if (fs.existsSync(absolutePath)) {
+    try { return new AttachmentBuilder(absolutePath, { name: path.basename(absolutePath) }); }
+    catch { return null; }
+  }
+  return null;
+}
+
+function getCardImageUrlSafe(card) {
+  const img = card.image || '';
+  if ((img.startsWith('http://') || img.startsWith('https://')) && img.length <= 2048) return img;
+  return null;
+}
+
+// ─── Annonce publique dans le salon pack_announce ─────────────────────────────
+
+async function announceEncounterWin(guild, winner, card, guildId) {
+  const announceChannelId = getPackAnnounceChannel(guildId);
+  if (!announceChannelId) return null;
+
+  const announceChannel = guild.channels.cache.get(String(announceChannelId));
+  if (!announceChannel) return null;
+
+  const userData      = getUserData(guildId, winner.id);
+  const cardCopies    = userData.collection.filter(c => c.nom === card.nom && c.rareté === card.rareté).length;
+  const collectionSize = userData.collection.length;
+  const typeEmoji     = CARD_TYPES[card.type]?.emoji || '🎴';
+
+  const embed = new EmbedBuilder()
+    .setTitle('⚡ ENCOUNTER REMPORTÉ !')
+    .setDescription(`# 🎴 ${card.nom}`)
+    .setColor(ENCOUNTER_COLOR)
+    .addFields(
+      { name: `${typeEmoji} Type`,   value: card.type ? card.type.charAt(0).toUpperCase() + card.type.slice(1) : 'Joueur', inline: true },
+      { name: '🏆 Rareté',          value: `${getRarityEmoji(card.rareté)} ${card.rareté}`,                                inline: true },
+      { name: '📊 Statistiques',    value: formatCardStats(card),                                                           inline: false },
+      { name: '🪙 Nouveau solde',   value: `${userData.coins} 🪙`,                                                          inline: true },
+      { name: '🎴 Collection',      value: `${collectionSize} carte${collectionSize > 1 ? 's' : ''}`,                       inline: true },
+      { name: '📦 Exemplaires',     value: `x${cardCopies}`,                                                                inline: true },
+    )
+    .setFooter({ text: `Paris Saint-Germain • ${guild.name}`, iconURL: PSG_FOOTER_ICON });
+
+  let cdnImageUrl = null;
+
+  try {
+    const attachment = getCardImageAttachment(card);
+    const imageUrl   = getCardImageUrlSafe(card);
+
+    if (attachment) {
+      embed.setImage(`attachment://${attachment.name}`);
+      const sentMsg = await announceChannel.send({ content: `🎉 ${winner}`, embeds: [embed], files: [attachment] });
+      const att = sentMsg.attachments.first();
+      if (att) cdnImageUrl = att.url;
+    } else if (imageUrl) {
+      embed.setImage(imageUrl);
+      await announceChannel.send({ content: `🎉 ${winner}`, embeds: [embed] });
+      cdnImageUrl = imageUrl;
+    } else {
+      await announceChannel.send({ content: `🎉 ${winner}`, embeds: [embed] });
+    }
+  } catch (e) {
+    console.error('❌ Erreur annonce Encounter:', e.message);
+  }
+
+  return cdnImageUrl;
+}
+
+// ─── Spawn ────────────────────────────────────────────────────────────────────
 
 async function spawnMinigame(client, guildId) {
   const channelId = getMinigameChannel(guildId);
@@ -38,173 +144,331 @@ async function spawnMinigame(client, guildId) {
   const channel = guild.channels.cache.get(channelId);
   if (!channel) return;
 
-  const questionData = PSG_QUESTIONS[Math.floor(Math.random() * PSG_QUESTIONS.length)];
+  if (activeEncounters.has(guildId)) return;
+
+  const cards  = loadEncounterCards();
   const labels = ['A', 'B', 'C', 'D'];
 
-  const embed = new EmbedBuilder()
-    .setTitle('⚡ JOUEUR FUYARD APPARU !')
-    .setDescription(`Un joueur légendaire vient d'apparaître ! Réponds correctement et rapidement pour gagner une carte exclusive !\n\n**❓ ${questionData.question}**`)
-    .setColor(0xFFD700)
-    .addFields(
-      { name: '⏱️ Temps', value: `${MINIGAME_CONFIG.timeout} secondes`, inline: true },
-      { name: '🏆 Récompense', value: 'Carte Légendaire/Épique', inline: true },
-    )
-    .setFooter({ text: "Première bonne réponse gagne !", iconURL: PSG_FOOTER_ICON });
+  if (cards.length) {
+    // ── Mode normal (pack_encounter.json présent) ─────────────────────────
+    const card         = cards[Math.floor(Math.random() * cards.length)];
+    const questionData = card.questions[Math.floor(Math.random() * card.questions.length)];
 
-  const buttons = questionData.answers.map((answer, i) =>
-    new ButtonBuilder()
-      .setCustomId(`minigame_answer_${guildId}_${i}`)
-      .setLabel(`${labels[i]}. ${answer}`)
-      .setStyle(ButtonStyle.Primary),
-  );
+    const embed = new EmbedBuilder()
+      .setTitle('⚡ PSG ENCOUNTER !')
+      .setDescription(
+        `Un joueur du PSG vient d'apparaître !\n`
+        + `Réponds correctement **en premier** pour remporter sa carte exclusive !\n\n`
+        + `━━━━━━━━━━━━━━━━━━━━━━\n`
+        + `❓ **${questionData.question}**\n`
+        + `━━━━━━━━━━━━━━━━━━━━━━`,
+      )
+      .setColor(ENCOUNTER_COLOR)
+      .addFields(
+        { name: '⏱️ Temps limite', value: `${MINIGAME_CONFIG.timeout} secondes`,                                         inline: true },
+        { name: '🏆 Récompense',   value: `Carte **${card.nom}** — ${getRarityEmoji(card.rareté)} ${card.rareté}`,       inline: true },
+      )
+      .setFooter({ text: 'Première bonne réponse gagne ! • Paris Saint-Germain', iconURL: PSG_FOOTER_ICON });
 
-  const row = new ActionRowBuilder().addComponents(buttons);
-  const message = await channel.send({ embeds: [embed], components: [row] });
+    const attachment = getCardImageAttachment(card);
+    const imageUrl   = getCardImageUrlSafe(card);
+    if (attachment) embed.setImage(`attachment://${attachment.name}`);
+    else if (imageUrl) embed.setImage(imageUrl);
 
-  activeMinigames.set(guildId, {
-    answered: new Set(),
-    winner: null,
-    questionData,
-    message,
-    guildId,
-    client,
-  });
+    const validAnswers = questionData.answers
+      .map((a, i) => ({ answer: a, index: i }))
+      .filter(a => a.answer !== '—');
 
-  const timeout = setTimeout(async () => {
-    const state = activeMinigames.get(guildId);
-    if (!state || state.winner) return;
-
-    const disabledButtons = questionData.answers.map((answer, i) =>
+    const buttons = validAnswers.map(({ answer, index }) =>
       new ButtonBuilder()
-        .setCustomId(`minigame_answer_${guildId}_${i}`)
-        .setLabel(`${labels[i]}. ${answer}`)
-        .setStyle(i === questionData.correct ? ButtonStyle.Success : ButtonStyle.Secondary)
-        .setDisabled(true),
+        .setCustomId(`encounter_answer_${guildId}_${index}`)
+        .setLabel(`${labels[index]}. ${answer}`)
+        .setStyle(ButtonStyle.Primary),
     );
-    const disabledRow = new ActionRowBuilder().addComponents(disabledButtons);
 
-    const endEmbed = new EmbedBuilder()
-      .setTitle('⏰ Temps écoulé !')
-      .setDescription(`Personne n'a trouvé la bonne réponse à temps !\n\n**✅ Réponse correcte :** ${questionData.answers[questionData.correct]}`)
-      .setColor(PSG_RED);
+    const sendOptions = { embeds: [embed], components: [new ActionRowBuilder().addComponents(buttons)] };
+    if (attachment) sendOptions.files = [attachment];
 
-    try { await message.edit({ embeds: [endEmbed], components: [disabledRow] }); } catch { /* message supprimé */ }
+    let message;
+    try {
+      message = await channel.send(sendOptions);
+    } catch (e) {
+      console.error(`❌ Erreur envoi Encounter pour ${guild.name}:`, e.message);
+      scheduleNextMinigame(guildId);
+      return;
+    }
 
-    activeMinigames.delete(guildId);
-    scheduleNextMinigame(guildId);
-  }, MINIGAME_CONFIG.timeout * 1000);
+    activeEncounters.set(guildId, {
+      mode: 'encounter', answered: new Set(), winner: null,
+      card, questionData, validAnswers, message, guildId, client,
+    });
 
-  activeMinigames.get(guildId).timeout = timeout;
+    const timeout = setTimeout(() => _handleEncounterTimeout(guildId, validAnswers, labels), MINIGAME_CONFIG.timeout * 1000);
+    activeEncounters.get(guildId).timeout = timeout;
+    console.log(`⚡ Encounter spawné sur ${guild.name} : ${card.nom}`);
+
+  } else {
+    // ── Mode fallback (pas de pack_encounter.json) ────────────────────────
+    const questionData = PSG_QUESTIONS_FALLBACK[Math.floor(Math.random() * PSG_QUESTIONS_FALLBACK.length)];
+
+    const embed = new EmbedBuilder()
+      .setTitle('⚡ PSG ENCOUNTER !')
+      .setDescription(
+        `Un joueur du PSG vient d'apparaître ! Réponds correctement et rapidement pour gagner une carte exclusive !\n\n`
+        + `━━━━━━━━━━━━━━━━━━━━━━\n`
+        + `❓ **${questionData.question}**\n`
+        + `━━━━━━━━━━━━━━━━━━━━━━`,
+      )
+      .setColor(ENCOUNTER_COLOR)
+      .addFields(
+        { name: '⏱️ Temps limite', value: `${MINIGAME_CONFIG.timeout} secondes`, inline: true },
+        { name: '🏆 Récompense',   value: 'Carte Légendaire/Épique',             inline: true },
+      )
+      .setFooter({ text: 'Première bonne réponse gagne ! • Paris Saint-Germain', iconURL: PSG_FOOTER_ICON });
+
+    const buttons = questionData.answers.map((answer, i) =>
+      new ButtonBuilder()
+        .setCustomId(`encounter_answer_${guildId}_${i}`)
+        .setLabel(`${labels[i]}. ${answer}`)
+        .setStyle(ButtonStyle.Primary),
+    );
+
+    let message;
+    try {
+      message = await channel.send({ embeds: [embed], components: [new ActionRowBuilder().addComponents(buttons)] });
+    } catch (e) {
+      console.error(`❌ Erreur envoi mini-jeu pour ${guild.name}:`, e.message);
+      scheduleNextMinigame(guildId);
+      return;
+    }
+
+    const validAnswers = questionData.answers.map((a, i) => ({ answer: a, index: i }));
+    activeEncounters.set(guildId, {
+      mode: 'fallback', answered: new Set(), winner: null,
+      card: null, questionData, validAnswers, message, guildId, client,
+    });
+
+    const timeout = setTimeout(() => _handleEncounterTimeout(guildId, validAnswers, labels), MINIGAME_CONFIG.timeout * 1000);
+    activeEncounters.get(guildId).timeout = timeout;
+    console.log(`⚡ Encounter (fallback) spawné sur ${guild.name}`);
+  }
 }
 
+// ─── Timeout ──────────────────────────────────────────────────────────────────
+
+async function _handleEncounterTimeout(guildId, validAnswers, labels) {
+  const state = activeEncounters.get(guildId);
+  if (!state || state.winner) return;
+
+  const { message } = state;
+
+  const disabledButtons = validAnswers.map(({ answer, index }) =>
+    new ButtonBuilder()
+      .setCustomId(`encounter_answer_${guildId}_${index}`)
+      .setLabel(`${labels[index]}. ${answer}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true),
+  );
+
+  const timeoutEmbed = new EmbedBuilder()
+    .setTitle('⏰ Encounter expiré !')
+    .setDescription(
+      `Personne n'a répondu correctement à temps...\n\n`
+      + (state.card ? `La carte **${state.card.nom}** repart dans la nature ! 🃏` : ''),
+    )
+    .setColor(ENCOUNTER_COLOR)
+    .setFooter({ text: 'Paris Saint-Germain • PSG Encounter', iconURL: PSG_FOOTER_ICON });
+
+  try { await message.edit({ embeds: [timeoutEmbed], components: [new ActionRowBuilder().addComponents(disabledButtons)] }); } catch { /* supprimé */ }
+
+  setTimeout(async () => { try { await message.delete(); } catch { /* déjà supprimé */ } }, 10000);
+
+  activeEncounters.delete(guildId);
+  scheduleNextMinigame(guildId);
+}
+
+// ─── Réponse d'un joueur ──────────────────────────────────────────────────────
+
 async function handleMinigameAnswer(interaction) {
-  const parts = interaction.customId.split('_');
-  const guildId = parts[2];
+  const parts       = interaction.customId.split('_');
+  const guildId     = parts[2];
   const answerIndex = parseInt(parts[3], 10);
 
-  const state = activeMinigames.get(guildId);
+  const state = activeEncounters.get(guildId);
   if (!state) {
-    return interaction.reply({ content: '❌ Ce mini-jeu est terminé.', flags: MessageFlags.Ephemeral });
+    return interaction.reply({ content: '❌ Cet encounter est déjà terminé.', flags: MessageFlags.Ephemeral });
   }
-
   if (state.answered.has(interaction.user.id)) {
-    return interaction.reply({ content: '❌ Tu as déjà répondu !', flags: MessageFlags.Ephemeral });
+    return interaction.reply({ content: '❌ Tu as déjà répondu à cet encounter !', flags: MessageFlags.Ephemeral });
   }
   state.answered.add(interaction.user.id);
 
-  if (answerIndex === state.questionData.correct) {
-    if (state.winner) {
-      return interaction.reply({ content: `✅ Bonne réponse mais ${state.winner} était plus rapide !`, flags: MessageFlags.Ephemeral });
+  const { card, questionData, validAnswers, message } = state;
+  const labels = ['A', 'B', 'C', 'D'];
+
+  if (answerIndex !== questionData.correct) {
+    return interaction.reply({
+      content: `❌ Mauvaise réponse ! Dommage... ${card ? `La carte **${card.nom}** est encore à prendre !` : ''}`,
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  // ── Bonne réponse ──────────────────────────────────────────────────────────
+  if (state.winner) {
+    return interaction.reply({
+      content: `✅ Bonne réponse ! Mais **${state.winner.displayName || state.winner.username}** a été plus rapide... 😔`,
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  state.winner = interaction.user;
+  clearTimeout(state.timeout);
+
+  const disabledButtons = validAnswers.map(({ answer, index }) =>
+    new ButtonBuilder()
+      .setCustomId(`encounter_answer_${guildId}_${index}`)
+      .setLabel(`${labels[index]}. ${answer}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true),
+  );
+
+  try { await interaction.update({ components: [new ActionRowBuilder().addComponents(disabledButtons)] }); } catch { /* ok */ }
+
+  if (card) {
+    addCardToUser(guildId, interaction.user.id, card);
+    logMinigameWin(interaction, card, guildId).catch(() => {});
+
+    const cdnImageUrl = await announceEncounterWin(interaction.guild, interaction.user, card, guildId);
+
+    const userData       = getUserData(guildId, interaction.user.id);
+    const cardCopies     = userData.collection.filter(c => c.nom === card.nom && c.rareté === card.rareté).length;
+    const collectionSize = userData.collection.length;
+    const typeEmoji      = CARD_TYPES[card.type]?.emoji || '🎴';
+
+    const winEmbed = new EmbedBuilder()
+      .setTitle('🎉 Tu as remporté l\'Encounter !')
+      .setDescription(`# 🎴 ${card.nom}`)
+      .setColor(ENCOUNTER_COLOR)
+      .addFields(
+        { name: `${typeEmoji} Type`,  value: card.type ? card.type.charAt(0).toUpperCase() + card.type.slice(1) : 'Joueur', inline: true },
+        { name: '🏆 Rareté',         value: `${getRarityEmoji(card.rareté)} ${card.rareté}`,                                inline: true },
+        { name: '📊 Statistiques',   value: formatCardStats(card),                                                           inline: false },
+        { name: '🪙 Nouveau solde',  value: `${userData.coins} 🪙`,                                                          inline: true },
+        { name: '🎴 Collection',     value: `${collectionSize} carte${collectionSize > 1 ? 's' : ''}`,                       inline: true },
+        { name: '📦 Exemplaires',    value: `x${cardCopies}`,                                                                inline: true },
+      )
+      .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON });
+
+    if (cdnImageUrl) winEmbed.setImage(cdnImageUrl);
+
+    setTimeout(async () => { try { await message.delete(); } catch { /* ok */ } }, 2000);
+
+    try {
+      await interaction.followUp({ embeds: [winEmbed], flags: MessageFlags.Ephemeral });
+    } catch (e) {
+      console.error('❌ Erreur envoi embed victoire:', e.message);
     }
 
-    state.winner = interaction.user;
-    clearTimeout(state.timeout);
-
-    const labels = ['A', 'B', 'C', 'D'];
-    const disabledButtons = state.questionData.answers.map((answer, i) =>
-      new ButtonBuilder()
-        .setCustomId(`minigame_answer_${guildId}_${i}`)
-        .setLabel(`${labels[i]}. ${answer}`)
-        .setStyle(i === state.questionData.correct ? ButtonStyle.Success : ButtonStyle.Secondary)
-        .setDisabled(true),
-    );
-    const disabledRow = new ActionRowBuilder().addComponents(disabledButtons);
-    await interaction.update({ components: [disabledRow] });
-
-    await giveMinigameReward(interaction, guildId, state.questionData);
-    activeMinigames.delete(guildId);
-    scheduleNextMinigame(guildId);
   } else {
-    return interaction.reply({ content: '❌ Mauvaise réponse ! Dommage...', flags: MessageFlags.Ephemeral });
+    await _giveFallbackReward(interaction, guildId, message);
   }
+
+  activeEncounters.delete(guildId);
+  scheduleNextMinigame(guildId);
 }
 
-async function giveMinigameReward(interaction, guildId, questionData) {
+// ─── Récompense fallback ──────────────────────────────────────────────────────
+
+async function _giveFallbackReward(interaction, guildId, message) {
   const cards = loadPackCards('pack_event');
   if (!cards.length) {
-    return interaction.followUp({ content: '❌ Erreur : Aucune carte disponible dans le pack événement.', flags: MessageFlags.Ephemeral });
+    await interaction.followUp({ content: '❌ Erreur : Aucune carte disponible dans le pack événement.', flags: MessageFlags.Ephemeral });
+    return;
   }
 
-  const chosenRarity = weightedRandom(PACKS_CONFIG.pack_event.drop_rates);
+  const chosenRarity  = weightedRandom(PACKS_CONFIG.pack_event.drop_rates);
   const cardsOfRarity = cards.filter(c => c.rareté === chosenRarity);
-  const card = cardsOfRarity.length
+  const card          = cardsOfRarity.length
     ? cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)]
     : cards[Math.floor(Math.random() * cards.length)];
 
   addCardToUser(guildId, interaction.user.id, card);
-
-  // Log victoire mini-jeu
   logMinigameWin(interaction, card, guildId).catch(() => {});
 
-  const embed = new EmbedBuilder()
-    .setTitle('🎉 CARTE CAPTURÉE !')
-    .setDescription(`**${interaction.user} a gagné la carte !**\n\n# 🎴 ${card.nom}`)
-    .setColor(0xFFD700)
-    .addFields(
-      { name: '📊 Statistiques', value: formatCardStats(card), inline: false },
-      { name: '🏆 Rareté', value: `${getRarityEmoji(card.rareté)} ${card.rareté}`, inline: true },
-      { name: '✨ Type', value: `${getCardTypeEmoji(card.type)} ${card.type?.charAt(0).toUpperCase() + card.type?.slice(1)}`, inline: true },
-    )
-    .setFooter({ text: `Récompense mini-jeu • ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+  const cdnImageUrl = await announceEncounterWin(interaction.guild, interaction.user, card, guildId);
 
-  const imageUrl = getCardImageUrl(card);
-  if (imageUrl) embed.setImage(imageUrl);
+  const userData       = getUserData(guildId, interaction.user.id);
+  const cardCopies     = userData.collection.filter(c => c.nom === card.nom && c.rareté === card.rareté).length;
+  const collectionSize = userData.collection.length;
+  const typeEmoji      = CARD_TYPES[card.type]?.emoji || '🎴';
+
+  const embed = new EmbedBuilder()
+    .setTitle('🎉 Tu as remporté l\'Encounter !')
+    .setDescription(`# 🎴 ${card.nom}`)
+    .setColor(ENCOUNTER_COLOR)
+    .addFields(
+      { name: `${typeEmoji} Type`,  value: card.type ? card.type.charAt(0).toUpperCase() + card.type.slice(1) : 'Joueur', inline: true },
+      { name: '🏆 Rareté',         value: `${getRarityEmoji(card.rareté)} ${card.rareté}`,                                inline: true },
+      { name: '📊 Statistiques',   value: formatCardStats(card),                                                           inline: false },
+      { name: '🪙 Nouveau solde',  value: `${userData.coins} 🪙`,                                                          inline: true },
+      { name: '🎴 Collection',     value: `${collectionSize} carte${collectionSize > 1 ? 's' : ''}`,                       inline: true },
+      { name: '📦 Exemplaires',    value: `x${cardCopies}`,                                                                inline: true },
+    )
+    .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON });
+
+  if (cdnImageUrl) embed.setImage(cdnImageUrl);
 
   const endEmbed = new EmbedBuilder()
     .setTitle('🎉 GAGNANT !')
-    .setDescription(`**${interaction.user} a capturé le joueur fuyard !**\n\nBonne réponse : ${questionData.answers[questionData.correct]}`)
-    .setColor(0xFFD700);
+    .setDescription(`**${interaction.user} a capturé le joueur Encounter !**`)
+    .setColor(ENCOUNTER_COLOR);
 
-  const state = activeMinigames.get(guildId);
-  try { await state?.message?.edit({ embeds: [endEmbed] }); } catch { /* ok */ }
-
-  await interaction.followUp({ embeds: [embed] });
+  try { await message.edit({ embeds: [endEmbed], components: [] }); } catch { /* ok */ }
+  await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }
+
+// ─── Commande /minigame config ────────────────────────────────────────────────
 
 async function configMinigameCommand(interaction, salon) {
   if (!checkRolePermission(interaction, 'admin')) {
     return interaction.reply({
-      embeds: [new EmbedBuilder().setTitle('❌ Accès refusé').setDescription('Seuls les administrateurs peuvent utiliser cette commande.').setColor(PSG_RED)],
+      embeds: [new EmbedBuilder()
+        .setTitle('❌ Accès refusé')
+        .setDescription('Seuls les administrateurs peuvent utiliser cette commande.')
+        .setColor(PSG_RED)],
       flags: MessageFlags.Ephemeral,
     });
   }
 
   const guildId = interaction.guildId;
   setMinigameChannel(guildId, salon.id);
-  const nextTime = getNextMinigameTime(guildId);
+  const nextTime                          = getNextMinigameTime(guildId);
+  const { interval_ms, start_hour, end_hour } = getEncounterConfig(guildId);
 
   const embed = new EmbedBuilder()
-    .setTitle('✅ Mini-jeu configuré')
-    .setDescription(`Le mini-jeu **Joueur Fuyard** apparaîtra dans ${salon}`)
+    .setTitle('✅ Encounter configuré')
+    .setDescription(`Le PSG Encounter apparaîtra dans ${salon}`)
     .setColor(PSG_BLUE)
     .addFields(
-      { name: '⏰ Prochaine apparition', value: `<t:${Math.floor(nextTime.getTime() / 1000)}:F>\n(<t:${Math.floor(nextTime.getTime() / 1000)}:R>)`, inline: false },
-      { name: '📋 Intervalle', value: `Entre ${MINIGAME_CONFIG.min_interval_days} et ${MINIGAME_CONFIG.max_interval_days} jours`, inline: true },
-      { name: '🕐 Heures d\'apparition', value: `Entre ${MINIGAME_CONFIG.start_hour}h et ${MINIGAME_CONFIG.end_hour}h`, inline: true },
+      {
+        name:   '⏰ Prochaine apparition',
+        value:  `<t:${Math.floor(nextTime.getTime() / 1000)}:F>\n(<t:${Math.floor(nextTime.getTime() / 1000)}:R>)`,
+        inline: false,
+      },
+      {
+        name:   '📅 Intervalle',
+        value:  `${formatIntervalMs(interval_ms)} après chaque Encounter`,
+        inline: true,
+      },
+      {
+        name:   '🕐 Fourchette horaire',
+        value:  `Entre ${String(start_hour).padStart(2, '0')}h00 et ${String(end_hour).padStart(2, '0')}h00`,
+        inline: true,
+      },
     )
-    .setFooter({ text: 'Paris Saint-Germain • Système événementiel', iconURL: PSG_FOOTER_ICON });
+    .setFooter({ text: 'Paris Saint-Germain • Système Encounter', iconURL: PSG_FOOTER_ICON });
 
   return interaction.reply({ embeds: [embed] });
 }
 
-module.exports = { spawnMinigame, handleMinigameAnswer, configMinigameCommand, activeMinigames };
+module.exports = { spawnMinigame, handleMinigameAnswer, configMinigameCommand, activeEncounters };

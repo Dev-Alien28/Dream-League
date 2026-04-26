@@ -56,7 +56,8 @@ async function sendGamingRoomEmbed(channel) {
   const embed = new EmbedBuilder()
     .setTitle('Gaming Room 🕹️')
     .setDescription(
-      'Clique sur un bouton ci-dessous !\n\n'
+      '***🪙 Obtenez des PSG Coins en discutant dans les différents chats écrits !***\n\n'
+      +'***Clique sur un bouton ci-dessous !***\n\n'
       + '🎴 **Boutique PSG Dream League**\n'
       + 'Retrouvez tous les boosters de cartes afin de composer votre équipe de rêve !\n\n'
       + '🗂️ **Collection**\n'
@@ -241,6 +242,7 @@ async function handleBuyPack(interaction, packKey) {
 
     const typeEmoji = CARD_TYPES[card.type]?.emoji || '🎴';
     const collectionSize = freshData.collection.length;
+    const cardCopies = freshData.collection.filter(c => c.nom === card.nom && c.rareté === card.rareté).length;
 
     function buildCardEmbed() {
       return new EmbedBuilder()
@@ -249,11 +251,11 @@ async function handleBuyPack(interaction, packKey) {
         .setColor(getRarityColor(card.rareté))
         .addFields(
           { name: `${typeEmoji} Type`, value: card.type ? card.type.charAt(0).toUpperCase() + card.type.slice(1) : 'Joueur', inline: true },
-          { name: '🎲 Chance de drop', value: `${packInfo.drop_rates[card.rareté] ?? '?'}%`, inline: true },
-          { name: '\u200b', value: '\u200b', inline: true },
+          { name: '🏆 Rareté', value: `${getRarityEmoji(card.rareté)} ${card.rareté}`, inline: true },
           { name: '📊 Statistiques', value: formatCardStats(card), inline: false },
-          { name: '💰 Nouveau solde', value: `${freshData.coins} 🪙`, inline: true },
+          { name: '🪙 Nouveau solde', value: `${freshData.coins} 🪙`, inline: true },
           { name: '🎴 Collection', value: pluralCartes(collectionSize), inline: true },
+          { name: '📦 Exemplaires', value: `x${cardCopies}`, inline: true },
         )
         .setFooter({ text: `Paris Saint-Germain • ${interaction.guild.name}`, iconURL: PSG_FOOTER_ICON });
     }
@@ -274,9 +276,10 @@ async function handleBuyPack(interaction, packKey) {
             const sentMsg = await announceChannel.send({ content: `🎉 ${interaction.user}`, embeds: [publicEmbed], files: [announceFile] });
             const attachment = sentMsg.attachments.first();
             if (attachment) cdnImageUrl = attachment.url;
+          } else if (cardImageUrl) {
+            publicEmbed.setImage(cardImageUrl);
+            await announceChannel.send({ content: `🎉 ${interaction.user}`, embeds: [publicEmbed] });
           } else {
-            if (cardImageUrl) publicEmbed.setImage(cardImageUrl);
-            else publicEmbed.setThumbnail(getRarityCardImage(card.rareté || 'Basic'));
             await announceChannel.send({ content: `🎉 ${interaction.user}`, embeds: [publicEmbed] });
           }
         } catch { /* bot sans accès au salon */ }
@@ -292,7 +295,6 @@ async function handleBuyPack(interaction, packKey) {
       ephemeralEmbed.setImage(`attachment://${ephemeralFile.name}`);
       await interaction.editReply({ embeds: [ephemeralEmbed], files: [ephemeralFile] });
     } else {
-      if (!cardImageUrl) ephemeralEmbed.setThumbnail(getRarityCardImage(card.rareté || 'Basic'));
       await interaction.editReply({ embeds: [ephemeralEmbed] });
     }
 
@@ -386,7 +388,8 @@ async function showCollection(interaction, targetUserId, targetUserName) {
 
 // ─── COLLECTION : données ─────────────────────────────────────────────────────
 
-const RARITY_ORDER = { Légendaire: 0, Legend: 0, Unique: 1, Épique: 2, Elite: 2, Advanced: 3, Basic: 4 };
+// Give en premier (-1), Encounter juste après (0), puis les autres raretés
+const RARITY_ORDER = { Give: -1, Encounter: 0, Légendaire: 1, Legend: 1, Unique: 2, Épique: 3, Elite: 3, Advanced: 4, Basic: 5 };
 const CARDS_PER_PAGE = 10;
 const collectionSessions = new Map();
 
@@ -538,9 +541,10 @@ async function handleCollectionInteraction(interaction) {
     const session = collectionSessions.get(viewerId)
       ?? restoreSession(viewerId, interaction.guildId, interaction.user.displayName);
 
-    const card = session.cardsGrouped[interaction.values[0]]?.card;
+    const cardEntry = session.cardsGrouped[interaction.values[0]];
+    const card = cardEntry?.card;
     if (!card) return interaction.reply({ content: '❌ Carte introuvable.', flags: MessageFlags.Ephemeral });
-    const count = session.cardsGrouped[interaction.values[0]].count;
+    const count = cardEntry.count;
     const typeEmoji = CARD_TYPES[card.type]?.emoji || '🎴';
 
     const embed = new EmbedBuilder()
@@ -550,8 +554,8 @@ async function handleCollectionInteraction(interaction) {
       .addFields(
         { name: `${typeEmoji} Type`, value: card.type?.charAt(0).toUpperCase() + card.type?.slice(1), inline: true },
         { name: '🏆 Rareté', value: `${getRarityEmoji(card.rareté)} ${card.rareté}`, inline: true },
-        { name: '📦 Exemplaires', value: `x${count}`, inline: true },
         { name: '📊 Statistiques', value: formatCardStats(card), inline: false },
+        { name: '📦 Exemplaires', value: `x${count}`, inline: true },
       )
       .setFooter({ text: "Paris Saint-Germain • Ici c'est Paris", iconURL: PSG_FOOTER_ICON });
 
@@ -562,7 +566,6 @@ async function handleCollectionInteraction(interaction) {
     }
     const cardImageUrl = getCardImageUrlLocal(card);
     if (cardImageUrl) embed.setImage(cardImageUrl);
-    else embed.setThumbnail(getRarityCardImage(card.rareté || 'Basic'));
     return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
   }
 
@@ -581,7 +584,6 @@ async function handleCollectionInteraction(interaction) {
     if (isPrev) session.currentPage = Math.max(0, session.currentPage - 1);
     else if (isNext) session.currentPage = Math.min(session.pages.length - 1, session.currentPage + 1);
     else {
-      // Actualiser
       const fresh = getUserCardsGrouped(session.guildId, session.userId);
       const freshUserData = getUserData(session.guildId, session.userId);
       session.cardsGrouped = fresh;
@@ -613,7 +615,7 @@ module.exports = {
   sendGamingRoomEmbed,
   handleBoosters,
   handleBuyPack,
-  handlePortefeuille: () => {}, // conservé pour compatibilité ascendante, ne fait plus rien
+  handlePortefeuille: () => {}, // conservé pour compatibilité ascendante
   handleCollection,
   handleCollectionInteraction,
 };
