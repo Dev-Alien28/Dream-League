@@ -153,11 +153,11 @@ function buildCommandsJSON() {
     },
     {
       name: 'removecoins',
-      description: '[ADMIN] Retirer des PSG Coins à un membre',
+      description: '[ADMIN] Retirer des PSG Coins à un membre (solde peut être négatif)',
       default_member_permissions: null,
       options: [
         { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
-        { name: 'montant', description: 'Montant', type: ApplicationCommandOptionType.Integer, required: true },
+        { name: 'montant', description: 'Montant à retirer', type: ApplicationCommandOptionType.Integer, required: true },
       ],
     },
     {
@@ -177,6 +177,14 @@ function buildCommandsJSON() {
         { name: 'carte_id', description: "L'ID de la carte", type: ApplicationCommandOptionType.String, required: true },
         { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
         { name: 'raison', description: 'Raison (optionnel)', type: ApplicationCommandOptionType.String, required: false },
+      ],
+    },
+    {
+      name: 'removecard',
+      description: '[ADMIN] Retirer une carte de la collection d\'un membre',
+      default_member_permissions: null,
+      options: [
+        { name: 'membre', description: 'Le membre dont retirer une carte', type: ApplicationCommandOptionType.User, required: true },
       ],
     },
     {
