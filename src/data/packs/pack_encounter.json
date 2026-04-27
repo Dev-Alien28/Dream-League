@@ -1,0 +1,307 @@
+[
+  {
+    "id": "enc_sergio_rico",
+    "type": "joueur",
+    "nom": "Sergio Rico Civil",
+    "rareté": "Encounter",
+    "position": "Gardien",
+    "stats": { "physique": 84, "agilité": 85, "arrêt": 86 },
+    "image": "images/cards/Carte_4.png",
+    "questions": [
+      {
+        "question": "En quelle année Sergio Rico a-t-il rejoint le PSG en prêt avant son transfert définitif ?",
+        "answers": ["2018", "2019", "2020", "2021"],
+        "correct": 1
+      },
+      {
+        "question": "Dans quel club évoluait Sergio Rico avant son transfert définitif au PSG ?",
+        "answers": ["Real Madrid", "Séville FC", "Betis Séville", "Atletico Madrid"],
+        "correct": 1
+      },
+      {
+        "question": "Quelle est la nationalité de Sergio Rico ?",
+        "answers": ["Portugaise", "Espagnole", "Française", "Brésilienne"],
+        "correct": 1
+      },
+      {
+        "question": "Quel poste occupait Sergio Rico au PSG ?",
+        "answers": ["Défenseur central", "Milieu défensif", "Gardien de but", "Latéral droit"],
+        "correct": 2
+      },
+      {
+        "question": "Quel numéro de maillot portait Sergio Rico au PSG ?",
+        "answers": ["1", "30", "16", "99"],
+        "correct": 2
+      },
+      {
+        "question": "Dans quel club Sergio Rico a-t-il été prêté lors de la saison 2021-2022 ?",
+        "answers": ["Getafe", "Betis Séville", "RCD Mallorca", "Valence CF"],
+        "correct": 2
+      },
+      {
+        "question": "Combien de titres de Ligue 1 Sergio Rico a-t-il remportés avec le PSG ?",
+        "answers": ["0 titre", "1 titre", "2 titres", "3 titres"],
+        "correct": 2
+      },
+      {
+        "question": "Lors de quelle saison Sergio Rico a-t-il remporté le triplé national avec le PSG ?",
+        "answers": ["2018-2019", "2019-2020", "2020-2021", "2021-2022"],
+        "correct": 1
+      },
+      {
+        "question": "Contre quel club Sergio Rico a-t-il été titulaire en Ligue 1 le 9 novembre 2019 ?",
+        "answers": ["Olympique de Marseille", "AS Monaco", "Stade Brestois", "RC Lens"],
+        "correct": 2
+      },
+      {
+        "question": "Combien de matchs toutes compétitions confondues Sergio Rico a-t-il disputés avec le PSG ?",
+        "answers": ["12 matchs", "19 matchs", "24 matchs", "31 matchs"],
+        "correct": 2
+      }
+    ]
+  },
+  {
+    "id": "enc_serge_aurier",
+    "type": "joueur",
+    "nom": "Serge Aurier Civil",
+    "rareté": "Encounter",
+    "position": "Défenseur",
+    "stats": { "intelligence": 80, "pression": 88, "physique": 89 },
+    "image": "images/cards/Carte_4.png",
+    "questions": [
+      {
+        "question": "En quelle année Serge Aurier a-t-il été acheté définitivement par le PSG après son prêt ?",
+        "answers": ["2013", "2014", "2015", "2016"],
+        "correct": 2
+      },
+      {
+        "question": "Vrai ou Faux : Serge Aurier a-t-il été suspendu par le PSG pour des propos envers un entraîneur ?",
+        "answers": ["Vrai", "Faux", "—", "—"],
+        "correct": 0
+      },
+      {
+        "question": "Dans quel club Serge Aurier évoluait-il avant son transfert au PSG ?",
+        "answers": ["Lens", "Toulouse FC", "Lille", "Auxerre"],
+        "correct": 1
+      },
+      {
+        "question": "Quel est le club formateur de Serge Aurier ?",
+        "answers": ["RC Lens", "Toulouse FC", "Tottenham", "Le Havre"],
+        "correct": 0
+      },
+      {
+        "question": "Pour quelle sélection nationale Serge Aurier évolue-t-il ?",
+        "answers": ["Nigéria", "Côte d'Ivoire", "France", "Sénégal"],
+        "correct": 1
+      },
+      {
+        "question": "Combien de trophées Serge Aurier a-t-il remportés avec le PSG ?",
+        "answers": ["9 trophées", "10 trophées", "11 trophées", "12 trophées"],
+        "correct": 2
+      },
+      {
+        "question": "Dans quel club Serge Aurier a-t-il été transféré après son départ du PSG en 2017 ?",
+        "answers": ["Galatasaray", "Tottenham Hotspur", "Villarreal", "Nottingham Forest"],
+        "correct": 1
+      },
+      {
+        "question": "Quel entraîneur principal a le plus connu Serge Aurier au PSG ?",
+        "answers": ["Laurent Blanc", "Unai Emery", "Carlo Ancelotti", "Thomas Tuchel"],
+        "correct": 0
+      },
+      {
+        "question": "Combien de buts Serge Aurier a-t-il inscrits avec le PSG toutes compétitions confondues ?",
+        "answers": ["1 but", "3 buts", "5 buts", "6 buts"],
+        "correct": 1
+      },
+      {
+        "question": "Combien de passes décisives Serge Aurier a-t-il délivrées avec le PSG ?",
+        "answers": ["10 passes décisives", "12 passes décisives", "13 passes décisives", "18 passes décisives"],
+        "correct": 1
+      }
+    ]
+  },
+  {
+    "id": "enc_ander_herrera",
+    "type": "joueur",
+    "nom": "Ander Herrera Civil",
+    "rareté": "Encounter",
+    "position": "Milieu",
+    "stats": { "technique": 82, "intelligence": 86, "contrôle": 83 },
+    "image": "images/cards/Carte_4.png",
+    "questions": [
+      {
+        "question": "En quelle année Ander Herrera a-t-il signé au PSG ?",
+        "answers": ["2017", "2018", "2019", "2020"],
+        "correct": 2
+      },
+      {
+        "question": "Contre quelle équipe Ander Herrera a-t-il marqué son premier but pour le PSG ?",
+        "answers": ["Nantes", "Brest", "Clermont", "Amiens SC"],
+        "correct": 3
+      },
+      {
+        "question": "Combien de trophées Ander Herrera a-t-il remportés avec le PSG ?",
+        "answers": ["4 trophées", "6 trophées", "7 trophées", "10 trophées"],
+        "correct": 1
+      },
+      {
+        "question": "Combien de buts Ander Herrera a-t-il inscrits avec le PSG toutes compétitions confondues ?",
+        "answers": ["2 buts", "5 buts", "6 buts", "7 buts"],
+        "correct": 2
+      },
+      {
+        "question": "Contre quelle équipe Ander Herrera a-t-il marqué en Ligue des Champions avec le PSG ?",
+        "answers": ["Celtic Glasgow", "Manchester United", "Club Bruges", "Dortmund"],
+        "correct": 2
+      },
+      {
+        "question": "Combien de matchs Ander Herrera a-t-il disputés avec le PSG ?",
+        "answers": ["53 matchs", "72 matchs", "95 matchs", "120 matchs"],
+        "correct": 2
+      },
+      {
+        "question": "Quel est le premier entraîneur principal qu'Ander Herrera a connu au PSG ?",
+        "answers": ["Christophe Galtier", "Unai Emery", "Thomas Tuchel", "Mauricio Pochettino"],
+        "correct": 2
+      },
+      {
+        "question": "Dans quel club Ander Herrera a-t-il été transféré en 2022 (prêt) ?",
+        "answers": ["Athletic Club de Bilbao", "Manchester United", "Boca Junior", "Saragosse"],
+        "correct": 0
+      },
+      {
+        "question": "Vrai ou Faux : Ander Herrera était titulaire lors de la finale de Ligue des Champions 2020 contre le Bayern Munich ?",
+        "answers": ["Vrai", "Faux", "—", "—"],
+        "correct": 0
+      },
+      {
+        "question": "Lors de la saison 2020-2021, combien de buts Ander Herrera a-t-il inscrits en Ligue 1 ?",
+        "answers": ["0 but", "2 buts", "4 buts", "6 buts"],
+        "correct": 2
+      }
+    ]
+  },
+  {
+    "id": "enc_kangin_lee",
+    "type": "joueur",
+    "nom": "Kang-in Lee Civil",
+    "rareté": "Encounter",
+    "position": "Milieu",
+    "stats": { "technique": 85, "intelligence": 87, "contrôle": 87 },
+    "image": "images/cards/Carte_4.png",
+    "questions": [
+      {
+        "question": "De quel pays Kang-in Lee est-il originaire ?",
+        "answers": ["Japon", "Chine", "Corée du Sud", "Corée du Nord"],
+        "correct": 2
+      },
+      {
+        "question": "En quelle année Kang-in Lee a-t-il signé au PSG ?",
+        "answers": ["2021", "2022", "2023", "2024"],
+        "correct": 2
+      },
+      {
+        "question": "Contre quelle équipe Kang-in Lee a-t-il fait ses débuts en Ligue 1 avec le PSG ?",
+        "answers": ["Toulouse", "FC Lorient", "Nice", "Rennes"],
+        "correct": 1
+      },
+      {
+        "question": "Dans quel club espagnol évoluait Kang-in Lee avant de rejoindre le PSG ?",
+        "answers": ["FC Barcelone B", "Valence CF", "RCD Mallorca", "Séville FC"],
+        "correct": 2
+      },
+      {
+        "question": "À quel poste principal Kang-in Lee évolue-t-il au PSG ?",
+        "answers": ["Attaquant de pointe", "Milieu défensif", "Milieu offensif / ailier", "Latéral gauche"],
+        "correct": 2
+      },
+      {
+        "question": "Vrai ou Faux : Kang-in Lee est le premier joueur sud-coréen de l'histoire du PSG ?",
+        "answers": ["Vrai", "Faux", "—", "—"],
+        "correct": 0
+      },
+      {
+        "question": "Quel est le pied fort de Kang-in Lee ?",
+        "answers": ["Droit", "Gauche", "Les deux", "Ambidextre déclaré"],
+        "correct": 1
+      },
+      {
+        "question": "Dans quel club historique Kang-in Lee a-t-il été formé ?",
+        "answers": ["FC Barcelone", "Real Madrid", "Valence CF", "Atletico Madrid"],
+        "correct": 2
+      },
+      {
+        "question": "Lors de la saison 2022-2023 avec Majorque, combien de buts Kang-in Lee a-t-il inscrits en Liga ?",
+        "answers": ["3 buts", "4 buts", "6 buts", "9 buts"],
+        "correct": 2
+      },
+      {
+        "question": "Contre quelle équipe Kang-in Lee a-t-il inscrit son premier but avec le PSG ?",
+        "answers": ["FC Lorient", "AC Milan", "Olympique de Marseille", "Stade Rennais"],
+        "correct": 1
+      }
+    ]
+  },
+  {
+    "id": "enc_hugo_ekitike",
+    "type": "joueur",
+    "nom": "Hugo Ekitiké Civil",
+    "rareté": "Encounter",
+    "position": "Attaquant",
+    "stats": { "frappe": 82, "technique": 84, "contrôle": 83 },
+    "image": "images/cards/Carte_4.png",
+    "questions": [
+      {
+        "question": "En quelle année Hugo Ekitiké a-t-il signé au PSG ?",
+        "answers": ["2021", "2022", "2023", "2024"],
+        "correct": 1
+      },
+      {
+        "question": "Contre quelle équipe Hugo Ekitiké a-t-il marqué son premier but avec le PSG ?",
+        "answers": ["Stade de Reims", "AJ Auxerre", "FC Metz", "Troyes AC"],
+        "correct": 1
+      },
+      {
+        "question": "Combien de titres de Ligue 1 Hugo Ekitiké a-t-il remportés avec le PSG ?",
+        "answers": ["0 titre", "1 titre", "2 titres", "3 titres"],
+        "correct": 2
+      },
+      {
+        "question": "Combien de buts Hugo Ekitiké a-t-il inscrits lors de sa première saison au PSG (2022-2023) toutes compétitions confondues ?",
+        "answers": ["2 buts", "4 buts", "6 buts", "8 buts"],
+        "correct": 1
+      },
+      {
+        "question": "Contre quelle équipe Hugo Ekitiké a-t-il fait ses débuts en Ligue 1 avec le PSG ?",
+        "answers": ["Stade de Reims", "RC Lens", "Clermont Foot", "Troyes AC"],
+        "correct": 2
+      },
+      {
+        "question": "De quel club français Hugo Ekitiké provenait-il avant de rejoindre le PSG ?",
+        "answers": ["RC Lens", "Stade de Reims", "Lille OSC", "OGC Nice"],
+        "correct": 1
+      },
+      {
+        "question": "Quel est le poste principal d'Hugo Ekitiké ?",
+        "answers": ["Ailier droit", "Milieu offensif", "Avant-centre", "Second attaquant"],
+        "correct": 2
+      },
+      {
+        "question": "Quel était le premier numéro de maillot d'Hugo Ekitiké au PSG ?",
+        "answers": ["9", "29", "44", "77"],
+        "correct": 2
+      },
+      {
+        "question": "Quel entraîneur principal Hugo Ekitiké a-t-il connu au PSG ?",
+        "answers": ["Thomas Tuchel", "Mauricio Pochettino", "Christophe Galtier", "Luis Enrique"],
+        "correct": 2
+      },
+      {
+        "question": "Combien de passes décisives Hugo Ekitiké a-t-il délivrées avec le PSG ?",
+        "answers": ["1 passe décisive", "2 passes décisives", "4 passes décisives", "7 passes décisives"],
+        "correct": 2
+      }
+    ]
+  }
+]
