@@ -17,8 +17,46 @@ const { logPackPurchase } = require('../utils/logs');
 const fs = require('fs');
 const path = require('path');
 
-// ─── Lock anti-double-achat ────────────────────────────────────────────────────
-const buyLocks = new Set();
+// ─── Wrapper sécurisé pour toutes les interactions ────────────────────────────
+// Dit "j'arrive" à Discord immédiatement, puis exécute le vrai traitement.
+// Évite les timeouts quand plusieurs personnes cliquent en même temps.
+
+async function safeInteraction(interaction, fn, { defer = true, ephemeral = true } = {}) {
+  try {
+    if (defer && !interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ flags: ephemeral ? MessageFlags.Ephemeral : 0 });
+    }
+  } catch {
+    // Discord a déjà expiré ou répondu, on abandonne proprement
+    return;
+  }
+
+  try {
+    await fn();
+  } catch (err) {
+    console.error('❌ Erreur interaction :', err);
+    const msg = { content: '❌ Une erreur est survenue, réessaie dans quelques secondes.' };
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply(msg);
+      } else {
+        await interaction.reply({ ...msg, flags: MessageFlags.Ephemeral });
+      }
+    } catch { /* interaction définitivement expirée, rien à faire */ }
+  }
+}
+
+// ─── Lock anti-double-achat (timestamp-based) ─────────────────────────────────
+const buyTimestamps = new Map();
+const BUY_LOCK_WINDOW_MS = 5000;
+
+function canBuy(lockKey) {
+  const now = Date.now();
+  const last = buyTimestamps.get(lockKey) || 0;
+  if (now - last < BUY_LOCK_WINDOW_MS) return false;
+  buyTimestamps.set(lockKey, now);
+  return true;
+}
 
 // ─── Helper accord carte/cartes ───────────────────────────────────────────────
 
@@ -57,7 +95,7 @@ async function sendGamingRoomEmbed(channel) {
     .setTitle('Gaming Room 🕹️')
     .setDescription(
       '***🪙 Obtenez des PSG Coins en discutant dans les différents chats écrits !***\n\n'
-      +'***Clique sur un bouton ci-dessous !***\n\n'
+      + '***Clique sur un bouton ci-dessous !***\n\n'
       + '🎴 **Boutique PSG Dream League**\n'
       + 'Retrouvez tous les boosters de cartes afin de composer votre équipe de rêve !\n\n'
       + '🗂️ **Collection**\n'
@@ -87,6 +125,7 @@ async function sendGamingRoomEmbed(channel) {
 // ─── BOUTON : LES BOOSTERS ───────────────────────────────────────────────────
 
 async function handleBoosters(interaction) {
+  return safeInteraction(interaction, async () => {
   const guildId = interaction.guildId;
   const userId = interaction.user.id;
   const userData = getUserData(guildId, userId);
@@ -138,15 +177,9 @@ async function handleBoosters(interaction) {
   }
   if (btnCount > 0) rows.push(row);
 
-  const boitePath = path.join(__dirname, '..', 'images', 'Boite.png');
-  const replyOptions = { embeds: [embed], components: rows, flags: MessageFlags.Ephemeral };
-  if (fs.existsSync(boitePath)) {
-    const file = new AttachmentBuilder(boitePath, { name: 'Boite.png' });
-    embed.setImage('attachment://Boite.png');
-    replyOptions.files = [file];
-  }
+  embed.setImage('https://i.imgur.com/UeU5B40.png');
 
-  await interaction.reply(replyOptions);
+  await interaction.editReply({ embeds: [embed], components: rows });
 
   setTimeout(async () => {
     try {
@@ -162,6 +195,7 @@ async function handleBoosters(interaction) {
       await interaction.editReply({ components: disabledRows });
     } catch { /* message déjà supprimé ou interaction expirée, ok */ }
   }, 60000);
+  }); // fin safeInteraction
 }
 
 // ─── BOUTON : ACHAT PACK ─────────────────────────────────────────────────────
@@ -171,16 +205,16 @@ async function handleBuyPack(interaction, packKey) {
   const userId = interaction.user.id;
   const lockKey = `${guildId}:${userId}`;
 
-  if (buyLocks.has(lockKey)) {
+  // Lock timestamp — bloque les retries Discord dans la fenêtre de 5s
+  if (!canBuy(lockKey)) {
     try { await interaction.deferUpdate(); } catch { /* ok */ }
     return;
   }
-  buyLocks.add(lockKey);
 
   try {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   } catch (err) {
-    buyLocks.delete(lockKey);
+    buyTimestamps.set(lockKey, 0);
     console.error(`⚠️ deferReply échoué pour achat pack (${packKey}):`, err.message);
     return;
   }
@@ -298,43 +332,53 @@ async function handleBuyPack(interaction, packKey) {
       await interaction.editReply({ embeds: [ephemeralEmbed] });
     }
 
-  } finally {
-    buyLocks.delete(lockKey);
+  } catch (err) {
+    console.error(`❌ Erreur handleBuyPack (${packKey}):`, err);
+    try { await interaction.editReply({ content: '❌ Une erreur est survenue lors de l\'ouverture du pack.' }); } catch { /* ok */ }
   }
 }
 
 // ─── BOUTON : LA COLLECTION → UserSelectMenu ──────────────────────────────────
 
 async function handleCollection(interaction) {
-  const embed = new EmbedBuilder()
-    .setTitle('🗂️ Collection')
-    .setDescription('Sélectionne un membre pour voir sa collection, ou clique sur **Ma collection** pour voir la tienne !')
-    .setColor(PSG_BLUE)
-    .setFooter({ text: 'Paris Saint-Germain • PSG Dream League', iconURL: PSG_FOOTER_ICON });
+  try {
+    const embed = new EmbedBuilder()
+      .setTitle('🗂️ Collection')
+      .setDescription('Sélectionne un membre pour voir sa collection, ou clique sur **Ma collection** pour voir la tienne !')
+      .setColor(PSG_BLUE)
+      .setFooter({ text: 'Paris Saint-Germain • PSG Dream League', iconURL: PSG_FOOTER_ICON });
 
-  const avatarUrl = interaction.user.displayAvatarURL();
-  if (avatarUrl) embed.setThumbnail(avatarUrl);
+    const avatarUrl = interaction.user.displayAvatarURL();
+    if (avatarUrl) embed.setThumbnail(avatarUrl);
 
-  const row = new ActionRowBuilder().addComponents(
-    new UserSelectMenuBuilder()
-      .setCustomId(`gr_coll_user_select_${interaction.user.id}`)
-      .setPlaceholder('👤 Voir la collection d\'un membre...')
-      .setMinValues(1)
-      .setMaxValues(1),
-  );
+    const row = new ActionRowBuilder().addComponents(
+      new UserSelectMenuBuilder()
+        .setCustomId(`gr_coll_user_select_${interaction.user.id}`)
+        .setPlaceholder('👤 Voir la collection d\'un membre...')
+        .setMinValues(1)
+        .setMaxValues(1),
+    );
 
-  const myCollectionBtn = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`gr_coll_self_${interaction.user.id}`)
-      .setLabel('📋 Ma collection')
-      .setStyle(ButtonStyle.Primary),
-  );
+    const myCollectionBtn = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`gr_coll_self_${interaction.user.id}`)
+        .setLabel('📋 Ma collection')
+        .setStyle(ButtonStyle.Primary),
+    );
 
-  return interaction.reply({
-    embeds: [embed],
-    components: [row, myCollectionBtn],
-    flags: MessageFlags.Ephemeral,
-  });
+    return await interaction.reply({
+      embeds: [embed],
+      components: [row, myCollectionBtn],
+      flags: MessageFlags.Ephemeral,
+    });
+  } catch (err) {
+    console.error('❌ Erreur handleCollection :', err);
+    try {
+      const msg = { content: '❌ Une erreur est survenue, réessaie dans quelques secondes.', flags: MessageFlags.Ephemeral };
+      if (interaction.deferred || interaction.replied) await interaction.editReply(msg);
+      else await interaction.reply(msg);
+    } catch { /* interaction expirée */ }
+  }
 }
 
 // ─── COLLECTION : afficher pour un userId donné ───────────────────────────────
@@ -388,7 +432,6 @@ async function showCollection(interaction, targetUserId, targetUserName) {
 
 // ─── COLLECTION : données ─────────────────────────────────────────────────────
 
-// Give en premier (-1), Encounter juste après (0), puis les autres raretés
 const RARITY_ORDER = { Give: -1, Encounter: 0, Légendaire: 1, Legend: 1, Unique: 2, Épique: 3, Elite: 3, Advanced: 4, Basic: 5 };
 const CARDS_PER_PAGE = 10;
 const collectionSessions = new Map();
@@ -615,7 +658,7 @@ module.exports = {
   sendGamingRoomEmbed,
   handleBoosters,
   handleBuyPack,
-  handlePortefeuille: () => {}, // conservé pour compatibilité ascendante
+  handlePortefeuille: () => {},
   handleCollection,
   handleCollectionInteraction,
 };

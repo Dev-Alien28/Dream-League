@@ -107,7 +107,7 @@ const PACKS_CONFIG = {
   psg_11_03: {
     nom: '11/03 is magic',
     prix: 100,
-    description: 'Retrouvez tous les joueurs ayant vécu la célèbre date du 11/03',
+    description: "Set composé des joueurs ayant vécu la célèbre date du 11/03, obtenez des joueurs de la rareté 'Elite' surpuissants comme Thiago Silva, Marco Verratti ou Neymar Jr",
     fichier: 'pack_11_03.json',
     emoji: '🪄',
     drop_rates: {
