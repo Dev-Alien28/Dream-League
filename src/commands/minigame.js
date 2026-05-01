@@ -146,6 +146,10 @@ async function spawnMinigame(client, guildId) {
 
   if (activeEncounters.has(guildId)) return;
 
+  // ── FIX : lire le timeout depuis la config du serveur ──────────────────────
+  const { timeout_s } = getEncounterConfig(guildId);
+  const timeoutSeconds = timeout_s ?? MINIGAME_CONFIG.timeout;
+
   const cards  = loadEncounterCards();
   const labels = ['A', 'B', 'C', 'D'];
 
@@ -165,7 +169,7 @@ async function spawnMinigame(client, guildId) {
       )
       .setColor(ENCOUNTER_COLOR)
       .addFields(
-        { name: '⏱️ Temps limite', value: `${MINIGAME_CONFIG.timeout} secondes`,                                         inline: true },
+        { name: '⏱️ Temps limite', value: `${timeoutSeconds} secondes`,                                                   inline: true },
         { name: '🏆 Récompense',   value: `Carte **${card.nom}** — ${getRarityEmoji(card.rareté)} ${card.rareté}`,       inline: true },
       )
       .setFooter({ text: 'Première bonne réponse gagne ! • Paris Saint-Germain', iconURL: PSG_FOOTER_ICON });
@@ -203,9 +207,10 @@ async function spawnMinigame(client, guildId) {
       card, questionData, validAnswers, message, guildId, client,
     });
 
-    const timeout = setTimeout(() => _handleEncounterTimeout(guildId, validAnswers, labels), MINIGAME_CONFIG.timeout * 1000);
+    // ── FIX : utiliser timeoutSeconds (config serveur) ─────────────────────
+    const timeout = setTimeout(() => _handleEncounterTimeout(guildId, validAnswers, labels), timeoutSeconds * 1000);
     activeEncounters.get(guildId).timeout = timeout;
-    console.log(`⚡ Encounter spawné sur ${guild.name} : ${card.nom}`);
+    console.log(`⚡ Encounter spawné sur ${guild.name} : ${card.nom} (timeout: ${timeoutSeconds}s)`);
 
   } else {
     // ── Mode fallback (pas de pack_encounter.json) ────────────────────────
@@ -221,8 +226,8 @@ async function spawnMinigame(client, guildId) {
       )
       .setColor(ENCOUNTER_COLOR)
       .addFields(
-        { name: '⏱️ Temps limite', value: `${MINIGAME_CONFIG.timeout} secondes`, inline: true },
-        { name: '🏆 Récompense',   value: 'Carte Légendaire/Épique',             inline: true },
+        { name: '⏱️ Temps limite', value: `${timeoutSeconds} secondes`, inline: true },
+        { name: '🏆 Récompense',   value: 'Carte Légendaire/Épique',    inline: true },
       )
       .setFooter({ text: 'Première bonne réponse gagne ! • Paris Saint-Germain', iconURL: PSG_FOOTER_ICON });
 
@@ -248,9 +253,10 @@ async function spawnMinigame(client, guildId) {
       card: null, questionData, validAnswers, message, guildId, client,
     });
 
-    const timeout = setTimeout(() => _handleEncounterTimeout(guildId, validAnswers, labels), MINIGAME_CONFIG.timeout * 1000);
+    // ── FIX : utiliser timeoutSeconds (config serveur) ─────────────────────
+    const timeout = setTimeout(() => _handleEncounterTimeout(guildId, validAnswers, labels), timeoutSeconds * 1000);
     activeEncounters.get(guildId).timeout = timeout;
-    console.log(`⚡ Encounter (fallback) spawné sur ${guild.name}`);
+    console.log(`⚡ Encounter (fallback) spawné sur ${guild.name} (timeout: ${timeoutSeconds}s)`);
   }
 }
 
@@ -442,8 +448,14 @@ async function configMinigameCommand(interaction, salon) {
 
   const guildId = interaction.guildId;
   setMinigameChannel(guildId, salon.id);
-  const nextTime                          = getNextMinigameTime(guildId);
-  const { interval_ms, start_hour, end_hour } = getEncounterConfig(guildId);
+  const nextTime = getNextMinigameTime(guildId);
+
+  // ── FIX : lire interval_min_ms / interval_max_ms au lieu de l'ancien interval_ms ──
+  const { interval_min_ms, interval_max_ms, start_hour, end_hour, timeout_s } = getEncounterConfig(guildId);
+
+  const intervalDisplay = interval_min_ms === interval_max_ms
+    ? `**${formatIntervalMs(interval_min_ms)}**`
+    : `entre **${formatIntervalMs(interval_min_ms)}** et **${formatIntervalMs(interval_max_ms)}**`;
 
   const embed = new EmbedBuilder()
     .setTitle('✅ Encounter configuré')
@@ -457,12 +469,17 @@ async function configMinigameCommand(interaction, salon) {
       },
       {
         name:   '📅 Intervalle',
-        value:  `${formatIntervalMs(interval_ms)} après chaque Encounter`,
+        value:  `${intervalDisplay} après chaque Encounter`,
         inline: true,
       },
       {
         name:   '🕐 Fourchette horaire',
         value:  `Entre ${String(start_hour).padStart(2, '0')}h00 et ${String(end_hour).padStart(2, '0')}h00`,
+        inline: true,
+      },
+      {
+        name:   '⏱️ Timeout question',
+        value:  `${timeout_s ?? MINIGAME_CONFIG.timeout} secondes`,
         inline: true,
       },
     )

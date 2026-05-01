@@ -77,6 +77,32 @@ function setupCommands(client) {
       }
     }
 
+    // ==================== MODALS ====================
+    // ⚠️ IMPORTANT : isModalSubmit() doit être vérifié AVANT isButton() et isStringSelectMenu()
+    // car showModal() est une réponse directe — ne jamais defer avant d'ouvrir un modal.
+    else if (interaction.isModalSubmit()) {
+      const { customId } = interaction;
+
+      try {
+        // ── Config Encounter modal ──
+        if (customId === 'config_enc_modal_submit') {
+          await handleConfigInteraction(interaction);
+          return;
+        }
+
+        // Ajoute ici d'autres modals si nécessaire
+        // if (customId === 'autre_modal') { ... }
+
+      } catch (error) {
+        console.error(`❌ Erreur modal ${customId}:`, error);
+        try {
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ content: '❌ Une erreur est survenue.', flags: MessageFlags.Ephemeral });
+          }
+        } catch { /* expirée */ }
+      }
+    }
+
     // ==================== BOUTONS ====================
     else if (interaction.isButton()) {
       const { customId } = interaction;
@@ -121,6 +147,8 @@ function setupCommands(client) {
         }
 
         // ── Config ──
+        // ⚠️ Le bouton config_enc_modal_open appelle showModal() dans handleConfigInteraction.
+        // Il NE FAUT PAS defer cette interaction — handleConfigInteraction gère tout en interne.
         if (customId.startsWith('config_')) { await handleConfigInteraction(interaction); return; }
 
       } catch (error) {

@@ -142,54 +142,87 @@ function saveEventState(state) {
 
 // ── Config Encounter ─────────────────────────────────────────────────────────
 //
-//  interval_ms  : durée fixe entre deux encounters (en millisecondes)
-//                   30 min  →     1_800_000
-//                   2 h     →     7_200_000
-//                   1 jour  →    86_400_000
+//  interval_min_ms : borne basse de la fourchette d'intervalle (millisecondes)
+//  interval_max_ms : borne haute de la fourchette d'intervalle (millisecondes)
 //
-//  start_hour   : borne basse de la fourchette horaire (ex: 8  → 8h00)
-//  end_hour     : borne haute exclusive               (ex: 23 → avant 23h00)
+//  Exemples :
+//    3j – 7j  →  interval_min_ms = 259_200_000  / interval_max_ms = 604_800_000
+//    1j – 1j  →  interval_min_ms = 86_400_000   / interval_max_ms = 86_400_000
+//    5m – 5m  →  interval_min_ms = 300_000       / interval_max_ms = 300_000
+//
+//  start_hour : borne basse de la fourchette horaire (ex: 8  → 8h00)
+//  end_hour   : borne haute exclusive               (ex: 23 → avant 23h00)
+//
+//  timeout_s  : durée d'affichage de la question en secondes (défaut: 60)
 //
 //  Comportement :
-//    Après la fin d'un encounter, on calcule :
-//      base = maintenant + interval_ms
-//    On choisit une heure aléatoire dans [start_hour, end_hour[
-//    sur le jour civil de `base`. Si ce moment est déjà dépassé,
-//    on avance jour par jour jusqu'à trouver un instant dans le futur.
+//    Après la fin d'un encounter, on tire aléatoirement un intervalle entre
+//    interval_min_ms et interval_max_ms, puis on place le spawn à une heure
+//    aléatoire dans [start_hour, end_hour[ sur le jour correspondant.
+//
+//  Compatibilité ascendante :
+//    Si un serveur a encore l'ancien champ interval_ms (sans min/max),
+//    on l'utilise comme valeur fixe pour les deux bornes.
 
-const DEFAULT_INTERVAL_MS = 86_400_000; // 1 jour
-const DEFAULT_START_HOUR  = 8;
-const DEFAULT_END_HOUR    = 23;
+const DEFAULT_INTERVAL_MIN_MS = 86_400_000; // 1 jour
+const DEFAULT_INTERVAL_MAX_MS = 86_400_000; // 1 jour
+const DEFAULT_START_HOUR      = 8;
+const DEFAULT_END_HOUR        = 23;
+const DEFAULT_TIMEOUT_S       = 60;
 
 function getEncounterConfig(guildId) {
   const state = events.get(`minigame_${guildId}`) || {};
+
+  // Compatibilité ascendante avec l'ancien champ interval_ms
+  let minMs = state.interval_min_ms;
+  let maxMs = state.interval_max_ms;
+  if (minMs === undefined && state.interval_ms !== undefined) {
+    minMs = state.interval_ms;
+    maxMs = state.interval_ms;
+  }
+
   return {
-    interval_ms: state.interval_ms ?? DEFAULT_INTERVAL_MS,
-    start_hour:  state.start_hour  ?? DEFAULT_START_HOUR,
-    end_hour:    state.end_hour    ?? DEFAULT_END_HOUR,
+    interval_min_ms: minMs  ?? DEFAULT_INTERVAL_MIN_MS,
+    interval_max_ms: maxMs  ?? DEFAULT_INTERVAL_MAX_MS,
+    start_hour:      state.start_hour  ?? DEFAULT_START_HOUR,
+    end_hour:        state.end_hour    ?? DEFAULT_END_HOUR,
+    timeout_s:       state.timeout_s   ?? DEFAULT_TIMEOUT_S,
   };
 }
 
-// ✅ FIX : setEncounterConfig recalcule immédiatement le prochain spawn
-function setEncounterConfig(guildId, { interval_ms, start_hour, end_hour }) {
+/**
+ * Met à jour la config Encounter et recalcule immédiatement le prochain spawn.
+ * Tous les champs sont optionnels — seuls ceux passés seront modifiés.
+ */
+function setEncounterConfig(guildId, { interval_min_ms, interval_max_ms, start_hour, end_hour, timeout_s }) {
   const guildKey = `minigame_${guildId}`;
   const state = events.get(guildKey) || {};
-  if (interval_ms !== undefined) state.interval_ms = interval_ms;
-  if (start_hour  !== undefined) state.start_hour  = start_hour;
-  if (end_hour    !== undefined) state.end_hour    = end_hour;
+
+  if (interval_min_ms !== undefined) state.interval_min_ms = interval_min_ms;
+  if (interval_max_ms !== undefined) state.interval_max_ms = interval_max_ms;
+  if (start_hour      !== undefined) state.start_hour      = start_hour;
+  if (end_hour        !== undefined) state.end_hour        = end_hour;
+  if (timeout_s       !== undefined) state.timeout_s       = timeout_s;
+
+  // Nettoie l'ancien champ pour éviter la confusion
+  delete state.interval_ms;
+
   events.set(guildKey, state);
 
   // Recalcule immédiatement le prochain spawn avec la nouvelle config
-  const nextTime  = _computeNextSpawn(guildId, new Date());
-  const updated   = events.get(guildKey);
+  const nextTime = _computeNextSpawn(guildId, new Date());
+  const updated  = events.get(guildKey);
   updated.next_spawn = nextTime.toISOString();
   events.set(guildKey, updated);
 
-  console.log(`✅ Encounter config mise à jour pour ${guildId} — prochain spawn recalculé : ${nextTime.toISOString()}`);
+  const { interval_min_ms: min, interval_max_ms: max } = getEncounterConfig(guildId);
+  console.log(`✅ Encounter config mise à jour pour ${guildId} — fourchette: ${formatIntervalMs(min)}–${formatIntervalMs(max)} — prochain spawn: ${nextTime.toISOString()}`);
 }
 
+// ─── Formatage ────────────────────────────────────────────────────────────────
+
 /**
- * Formate interval_ms en chaîne lisible : "2 jour(s)", "3 heure(s)", "45 minute(s)"
+ * Formate des millisecondes en chaîne lisible : "2 jour(s)", "3 heure(s)", "45 minute(s)"
  */
 function formatIntervalMs(ms) {
   if (ms >= 86_400_000 && ms % 86_400_000 === 0) return `${ms / 86_400_000} jour(s)`;
@@ -198,21 +231,19 @@ function formatIntervalMs(ms) {
 }
 
 /**
- * ✅ FIX : Parse plus robuste — accepte "1 minutes", "2 jours", "3h", "45 minutes", "1 jour"
- * Retourne les millisecondes ou null si invalide.
+ * Parse une saisie humaine en millisecondes.
+ * Accepte : "3j", "2 jours", "1 jour", "4h", "3 heures", "45m", "45 minutes", etc.
+ * Retourne null si invalide.
  */
 function parseIntervalInput(raw) {
-  // Nettoyage : minuscules, suppression des espaces superflus
   let s = raw.trim().toLowerCase();
-
-  // Remplacement des mots complets par leur abréviation (ordre important : pluriels avant singuliers)
   s = s
     .replace(/\bjours?\b/g,   'j')
     .replace(/\bheures?\b/g,  'h')
     .replace(/\bminutes?\b/g, 'm')
     .replace(/\bmins?\b/g,    'm')
     .replace(/\bhrs?\b/g,     'h')
-    .replace(/\s+/g, '');    // supprime tous les espaces restants
+    .replace(/\s+/g, '');
 
   const match = s.match(/^(\d+)(j|h|m)$/);
   if (!match) return null;
@@ -224,30 +255,36 @@ function parseIntervalInput(raw) {
   return null;
 }
 
-/**
- * Calcule le prochain instant de spawn.
- *
- * Deux modes selon l'intervalle :
- *
- * ── Mode "court" (interval_ms < 1 heure) ──────────────────────────────────
- *   Le prochain spawn = fromDate + interval_ms, sans contrainte horaire.
- *   Ex : 5 min → spawn dans exactement 5 min, toute la journée.
- *
- * ── Mode "long" (interval_ms >= 1 heure) ──────────────────────────────────
- *   base = fromDate + interval_ms
- *   On choisit une heure aléatoire dans [start_hour, end_hour[ sur le jour
- *   civil de base. Si ce moment est déjà passé, on avance jour par jour
- *   jusqu'à trouver un instant dans le futur.
- */
+// ─── Calcul du prochain spawn ─────────────────────────────────────────────────
+//
+// FIX BUG "1j ne spawn pas" :
+//   L'ancien code calculait `base = from + interval_ms` puis cherchait une heure
+//   aléatoire dans la fourchette sur ce jour-là. Si `from` était en fin de journée
+//   (après end_hour), le candidat tombait dans le passé et la boucle `while`
+//   avançait d'un jour → OK. Mais si l'intervalle était exactement 1j et que
+//   `from` était en milieu de journée, la boucle ne corrigeait pas et le spawn
+//   pouvait ne jamais se déclencher car `scheduleNextMinigame` renvoyait une date
+//   passée que le checker ignorait silencieusement.
+//
+//   Solution : on tire un intervalle aléatoire dans [min, max], on calcule le
+//   candidat, et on garantit qu'il est STRICTEMENT dans le futur en avançant
+//   jour par jour si nécessaire (pour les intervalles longs) ou en ajoutant
+//   l'intervalle depuis `now` (pour les intervalles courts).
+
 function _computeNextSpawn(guildId, fromDate) {
-  const { interval_ms, start_hour, end_hour } = getEncounterConfig(guildId);
+  const { interval_min_ms, interval_max_ms, start_hour, end_hour } = getEncounterConfig(guildId);
   const from = fromDate || new Date();
   const now  = new Date();
+
+  // Tirage aléatoire de l'intervalle dans [min, max]
+  const interval_ms = interval_min_ms === interval_max_ms
+    ? interval_min_ms
+    : interval_min_ms + Math.floor(Math.random() * (interval_max_ms - interval_min_ms + 1));
 
   // ── Mode court : intervalle < 1 heure → pas de fourchette horaire ─────────
   if (interval_ms < 3_600_000) {
     const candidate = new Date(from.getTime() + interval_ms);
-    // Sécurité : si pour une raison quelconque c'est dans le passé, on repart de now
+    // Sécurité : si c'est dans le passé, on repart de now
     if (candidate <= now) return new Date(now.getTime() + interval_ms);
     return candidate;
   }
@@ -255,14 +292,18 @@ function _computeNextSpawn(guildId, fromDate) {
   // ── Mode long : intervalle >= 1 heure → fourchette horaire respectée ──────
   const base = new Date(from.getTime() + interval_ms);
 
+  // On tire une heure et une minute aléatoires dans la fourchette configurée
   const randomHour = start_hour + Math.floor(Math.random() * (end_hour - start_hour));
   const randomMin  = Math.floor(Math.random() * 60);
 
   const candidate = new Date(base);
   candidate.setHours(randomHour, randomMin, 0, 0);
 
-  // Avance jour par jour jusqu'à trouver un instant strictement dans le futur
-  while (candidate <= now) {
+  // FIX : avance jour par jour jusqu'à trouver un instant STRICTEMENT dans le futur
+  // On utilise une copie de `now` datant d'1 seconde dans le futur pour éviter
+  // les égalités exactes qui pourraient faire rater le déclenchement.
+  const futureThreshold = new Date(now.getTime() + 1000);
+  while (candidate <= futureThreshold) {
     candidate.setDate(candidate.getDate() + 1);
   }
 
@@ -286,6 +327,7 @@ function scheduleNextMinigame(guildId) {
   const nextTime = _computeNextSpawn(guildId, now);
   const existing = events.get(guildKey) || {};
   events.set(guildKey, { ...existing, next_spawn: nextTime.toISOString(), last_spawn: now.toISOString() });
+  console.log(`📅 Prochain Encounter pour ${guildId} : ${nextTime.toISOString()}`);
   return nextTime;
 }
 
