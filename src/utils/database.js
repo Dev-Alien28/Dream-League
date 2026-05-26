@@ -18,6 +18,7 @@ const events      = new Enmap({ name: 'events',        dataDir: path.join(DATA_D
 const reminders   = new Enmap({ name: 'reminders',     dataDir: path.join(DATA_DIR, 'enmap') });
 const servers     = new Enmap({ name: 'servers',        dataDir: path.join(DATA_DIR, 'enmap') });
 const gamingRooms = new Enmap({ name: 'gaming_rooms',  dataDir: path.join(DATA_DIR, 'enmap') });
+const statsDb     = new Enmap({ name: 'stats',          dataDir: path.join(DATA_DIR, 'enmap') });
 
 // ==================== INITIALISATION ====================
 
@@ -132,6 +133,85 @@ function getFreePackCooldown(guildId, userId) {
   return Math.max(0, Math.floor((PACKS_CONFIG.free_pack.cooldown * 1000 - elapsed) / 1000));
 }
 
+// ==================== STATISTIQUES ====================
+
+/**
+ * Retourne l'objet stats complet pour une guild.
+ * Structure :
+ *   pack_purchases : [{ ts, userId, packKey, price, cardName, cardRarity }]
+ *   failed_purchases: [{ ts, userId, packKey, price, userCoins }]
+ *   encounter_wins  : [{ ts, userId, cardName, cardRarity }]
+ *   give_events     : [{ ts, adminId, userId, cardName, cardRarity }]
+ */
+function getStatsData(guildId) {
+  const key = `stats_${guildId}`;
+  if (!statsDb.has(key)) {
+    statsDb.set(key, {
+      pack_purchases:   [],
+      failed_purchases: [],
+      encounter_wins:   [],
+      give_events:      [],
+    });
+  }
+  return statsDb.get(key);
+}
+
+function _saveStatsData(guildId, data) {
+  statsDb.set(`stats_${guildId}`, data);
+}
+
+/** Enregistre un achat de pack réussi. */
+function recordPackPurchase(guildId, userId, packKey, price, cardName, cardRarity) {
+  const data = getStatsData(guildId);
+  data.pack_purchases.push({
+    ts:         new Date().toISOString(),
+    userId:     String(userId),
+    packKey:    String(packKey),
+    price:      price || 0,
+    cardName:   cardName || '',
+    cardRarity: cardRarity || '',
+  });
+  _saveStatsData(guildId, data);
+}
+
+/** Enregistre une tentative d'achat échouée (coins insuffisants). */
+function recordFailedPurchase(guildId, userId, packKey, requiredPrice, userCoins) {
+  const data = getStatsData(guildId);
+  data.failed_purchases.push({
+    ts:        new Date().toISOString(),
+    userId:    String(userId),
+    packKey:   String(packKey),
+    price:     requiredPrice || 0,
+    userCoins: userCoins || 0,
+  });
+  _saveStatsData(guildId, data);
+}
+
+/** Enregistre une victoire d'Encounter. */
+function recordEncounterWin(guildId, userId, cardName, cardRarity) {
+  const data = getStatsData(guildId);
+  data.encounter_wins.push({
+    ts:         new Date().toISOString(),
+    userId:     String(userId),
+    cardName:   cardName || '',
+    cardRarity: cardRarity || '',
+  });
+  _saveStatsData(guildId, data);
+}
+
+/** Enregistre un give de carte (admin). */
+function recordGiveEvent(guildId, adminId, userId, cardName, cardRarity) {
+  const data = getStatsData(guildId);
+  data.give_events.push({
+    ts:         new Date().toISOString(),
+    adminId:    String(adminId),
+    userId:     String(userId),
+    cardName:   cardName || '',
+    cardRarity: cardRarity || '',
+  });
+  _saveStatsData(guildId, data);
+}
+
 // ==================== MINI-JEU ====================
 
 function loadEventState() { return events.fetchEverything(); }
@@ -141,31 +221,9 @@ function saveEventState(state) {
 }
 
 // ── Config Encounter ─────────────────────────────────────────────────────────
-//
-//  interval_min_ms : borne basse de la fourchette d'intervalle (millisecondes)
-//  interval_max_ms : borne haute de la fourchette d'intervalle (millisecondes)
-//
-//  Exemples :
-//    3j – 7j  →  interval_min_ms = 259_200_000  / interval_max_ms = 604_800_000
-//    1j – 1j  →  interval_min_ms = 86_400_000   / interval_max_ms = 86_400_000
-//    5m – 5m  →  interval_min_ms = 300_000       / interval_max_ms = 300_000
-//
-//  start_hour : borne basse de la fourchette horaire (ex: 8  → 8h00)
-//  end_hour   : borne haute exclusive               (ex: 23 → avant 23h00)
-//
-//  timeout_s  : durée d'affichage de la question en secondes (défaut: 60)
-//
-//  Comportement :
-//    Après la fin d'un encounter, on tire aléatoirement un intervalle entre
-//    interval_min_ms et interval_max_ms, puis on place le spawn à une heure
-//    aléatoire dans [start_hour, end_hour[ sur le jour correspondant.
-//
-//  Compatibilité ascendante :
-//    Si un serveur a encore l'ancien champ interval_ms (sans min/max),
-//    on l'utilise comme valeur fixe pour les deux bornes.
 
-const DEFAULT_INTERVAL_MIN_MS = 86_400_000; // 1 jour
-const DEFAULT_INTERVAL_MAX_MS = 86_400_000; // 1 jour
+const DEFAULT_INTERVAL_MIN_MS = 86_400_000;
+const DEFAULT_INTERVAL_MAX_MS = 86_400_000;
 const DEFAULT_START_HOUR      = 8;
 const DEFAULT_END_HOUR        = 23;
 const DEFAULT_TIMEOUT_S       = 60;
@@ -173,7 +231,6 @@ const DEFAULT_TIMEOUT_S       = 60;
 function getEncounterConfig(guildId) {
   const state = events.get(`minigame_${guildId}`) || {};
 
-  // Compatibilité ascendante avec l'ancien champ interval_ms
   let minMs = state.interval_min_ms;
   let maxMs = state.interval_max_ms;
   if (minMs === undefined && state.interval_ms !== undefined) {
@@ -190,10 +247,6 @@ function getEncounterConfig(guildId) {
   };
 }
 
-/**
- * Met à jour la config Encounter et recalcule immédiatement le prochain spawn.
- * Tous les champs sont optionnels — seuls ceux passés seront modifiés.
- */
 function setEncounterConfig(guildId, { interval_min_ms, interval_max_ms, start_hour, end_hour, timeout_s }) {
   const guildKey = `minigame_${guildId}`;
   const state = events.get(guildKey) || {};
@@ -204,12 +257,9 @@ function setEncounterConfig(guildId, { interval_min_ms, interval_max_ms, start_h
   if (end_hour        !== undefined) state.end_hour        = end_hour;
   if (timeout_s       !== undefined) state.timeout_s       = timeout_s;
 
-  // Nettoie l'ancien champ pour éviter la confusion
   delete state.interval_ms;
-
   events.set(guildKey, state);
 
-  // Recalcule immédiatement le prochain spawn avec la nouvelle config
   const nextTime = _computeNextSpawn(guildId, new Date());
   const updated  = events.get(guildKey);
   updated.next_spawn = nextTime.toISOString();
@@ -221,20 +271,12 @@ function setEncounterConfig(guildId, { interval_min_ms, interval_max_ms, start_h
 
 // ─── Formatage ────────────────────────────────────────────────────────────────
 
-/**
- * Formate des millisecondes en chaîne lisible : "2 jour(s)", "3 heure(s)", "45 minute(s)"
- */
 function formatIntervalMs(ms) {
   if (ms >= 86_400_000 && ms % 86_400_000 === 0) return `${ms / 86_400_000} jour(s)`;
   if (ms >= 3_600_000  && ms % 3_600_000  === 0) return `${ms / 3_600_000} heure(s)`;
   return `${Math.round(ms / 60_000)} minute(s)`;
 }
 
-/**
- * Parse une saisie humaine en millisecondes.
- * Accepte : "3j", "2 jours", "1 jour", "4h", "3 heures", "45m", "45 minutes", etc.
- * Retourne null si invalide.
- */
 function parseIntervalInput(raw) {
   let s = raw.trim().toLowerCase();
   s = s
@@ -256,52 +298,30 @@ function parseIntervalInput(raw) {
 }
 
 // ─── Calcul du prochain spawn ─────────────────────────────────────────────────
-//
-// FIX BUG "1j ne spawn pas" :
-//   L'ancien code calculait `base = from + interval_ms` puis cherchait une heure
-//   aléatoire dans la fourchette sur ce jour-là. Si `from` était en fin de journée
-//   (après end_hour), le candidat tombait dans le passé et la boucle `while`
-//   avançait d'un jour → OK. Mais si l'intervalle était exactement 1j et que
-//   `from` était en milieu de journée, la boucle ne corrigeait pas et le spawn
-//   pouvait ne jamais se déclencher car `scheduleNextMinigame` renvoyait une date
-//   passée que le checker ignorait silencieusement.
-//
-//   Solution : on tire un intervalle aléatoire dans [min, max], on calcule le
-//   candidat, et on garantit qu'il est STRICTEMENT dans le futur en avançant
-//   jour par jour si nécessaire (pour les intervalles longs) ou en ajoutant
-//   l'intervalle depuis `now` (pour les intervalles courts).
 
 function _computeNextSpawn(guildId, fromDate) {
   const { interval_min_ms, interval_max_ms, start_hour, end_hour } = getEncounterConfig(guildId);
   const from = fromDate || new Date();
   const now  = new Date();
 
-  // Tirage aléatoire de l'intervalle dans [min, max]
   const interval_ms = interval_min_ms === interval_max_ms
     ? interval_min_ms
     : interval_min_ms + Math.floor(Math.random() * (interval_max_ms - interval_min_ms + 1));
 
-  // ── Mode court : intervalle < 1 heure → pas de fourchette horaire ─────────
   if (interval_ms < 3_600_000) {
     const candidate = new Date(from.getTime() + interval_ms);
-    // Sécurité : si c'est dans le passé, on repart de now
     if (candidate <= now) return new Date(now.getTime() + interval_ms);
     return candidate;
   }
 
-  // ── Mode long : intervalle >= 1 heure → fourchette horaire respectée ──────
   const base = new Date(from.getTime() + interval_ms);
 
-  // On tire une heure et une minute aléatoires dans la fourchette configurée
   const randomHour = start_hour + Math.floor(Math.random() * (end_hour - start_hour));
   const randomMin  = Math.floor(Math.random() * 60);
 
   const candidate = new Date(base);
   candidate.setHours(randomHour, randomMin, 0, 0);
 
-  // FIX : avance jour par jour jusqu'à trouver un instant STRICTEMENT dans le futur
-  // On utilise une copie de `now` datant d'1 seconde dans le futur pour éviter
-  // les égalités exactes qui pourraient faire rater le déclenchement.
   const futureThreshold = new Date(now.getTime() + 1000);
   while (candidate <= futureThreshold) {
     candidate.setDate(candidate.getDate() + 1);
@@ -423,7 +443,7 @@ function deleteReminderConfig(guildId) { reminders.delete(String(guildId)); }
 // ==================== EXPORTS ====================
 
 module.exports = {
-  users, events, reminders, servers, gamingRooms,
+  users, events, reminders, servers, gamingRooms, statsDb,
   initFiles,
   getUserData, saveUserData, getGuildData, addCardToUser, removeCoins, getUserCardsGrouped,
   loadPackCards, loadAllCards, findCardById,
@@ -437,4 +457,6 @@ module.exports = {
   getPackAnnounceChannel, setPackAnnounceChannel,
   initServerConfig, loadServerConfig, saveServerConfig,
   initReminderGuild, getReminderConfig, setReminderConfig, getAllReminderConfigs, deleteReminderConfig,
+  // Stats
+  getStatsData, recordPackPurchase, recordFailedPurchase, recordEncounterWin, recordGiveEvent,
 };

@@ -7,6 +7,7 @@ const { addCoinsCommand, removeCoinsCommand, setCoinsCommand, removeCardCommand,
 const { giveCommand } = require('../commands/give');
 const { configCommand, handleConfigInteraction } = require('../commands/config');
 const { handleMinigameAnswer } = require('../commands/minigame');
+const { statsCommand, handleStatsRefresh } = require('../commands/stats'); // ← AJOUT stats
 const {
   handleBoosters,
   handleBuyPack,
@@ -61,6 +62,9 @@ function setupCommands(client) {
           case 'rappel':
             await rappelCommand(interaction);
             break;
+          case 'stats':                        // ← AJOUT stats
+            await statsCommand(interaction);
+            break;
           default:
             await interaction.reply({ content: '❌ Commande inconnue.', flags: MessageFlags.Ephemeral });
         }
@@ -110,6 +114,9 @@ function setupCommands(client) {
       try {
         // ── Admin removecard ──
         if (customId.startsWith('admin_removecard_')) { await handleRemoveCardInteraction(interaction); return; }
+
+        // ── Stats refresh ──────────────────────────────────────────────────
+        if (customId.startsWith('stats_refresh_')) { await handleStatsRefresh(interaction); return; }
 
         // ── Gaming Room ──
         if (customId === 'gr_boosters')     { await handleBoosters(interaction); return; }

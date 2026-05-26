@@ -49,7 +49,7 @@ console.log('✅ Commandes configurées');
 
 // ==================== 🧠 SCHEDULER MINIGAME ====================
 
-client.once('ready', () => {
+client.once('clientReady', () => {
   console.log(`\n✅ Connecté en tant que ${client.user.tag}`);
   console.log('🧠 Scheduler minigame actif');
 

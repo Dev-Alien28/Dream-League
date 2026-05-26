@@ -7,6 +7,7 @@ const {
   getUserData, saveUserData, loadPackCards,
   canClaimFreePack, claimFreePack, getFreePackCooldown,
   getUserCardsGrouped, getPackAnnounceChannel,
+  recordPackPurchase, recordFailedPurchase,          // ← AJOUT stats
 } = require('../utils/database');
 const { PSG_BLUE, PSG_RED, PACKS_CONFIG, CARD_TYPES, PSG_FOOTER_ICON } = require('../config/settings');
 const {
@@ -240,6 +241,13 @@ async function handleBuyPack(interaction, packKey) {
       }
       claimFreePack(guildId, userId);
     } else if (userData.coins < packInfo.prix) {
+      // ── STATS : achat échoué (coins insuffisants) ────────────────────────
+      try {
+        recordFailedPurchase(guildId, userId, packKey, packInfo.prix, userData.coins);
+      } catch (e) {
+        console.error('⚠️ recordFailedPurchase error:', e.message);
+      }
+
       return interaction.editReply({
         embeds: [new EmbedBuilder()
           .setTitle('❌ Solde insuffisant')
@@ -271,6 +279,20 @@ async function handleBuyPack(interaction, packKey) {
     if (packKey !== 'free_pack') freshData.coins -= packInfo.prix;
     freshData.collection.push(card);
     saveUserData(guildId, userId, freshData);
+
+    // ── STATS : achat réussi ──────────────────────────────────────────────
+    try {
+      recordPackPurchase(
+        guildId,
+        userId,
+        packKey,
+        packKey === 'free_pack' ? 0 : packInfo.prix,
+        card.nom   || '',
+        card.rareté || '',
+      );
+    } catch (e) {
+      console.error('⚠️ recordPackPurchase error:', e.message);
+    }
 
     logPackPurchase(interaction, packInfo, card, freshData.coins).catch(() => {});
 
