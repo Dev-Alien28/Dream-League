@@ -118,11 +118,11 @@ const PACKS_CONFIG = {
     },
   },
   Back_to_Back: {
-    nom: 'Back to Back',
+    nom: 'Back to Back ⭐',
     prix: 2600,
-    description: "Le PSG vient de soulever la Champions League ! Pour célébrer ce sacre historique, débloquez des cartes Elite surpuissantes des héros qui ont écrit cette légende : Kvaratskhelia, Dembélé, Marquinhos et bien d'autres.",
+    description: "Le PSG vient de soulever la Ligue des Champions ! Pour célébrer ce sacre historique, débloquez des cartes Elite surpuissantes des héros qui ont écrit cette légende : Kvaratskhelia, Dembélé, Marquinhos et bien d'autres.",
     fichier: 'back_to_back.json',
-    emoji: '⭐⭐',
+    emoji: '⭐',
     drop_rates: {
       Advanced: 60,
       Elite:     40,
