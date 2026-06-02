@@ -2,6 +2,7 @@
 const {
   EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle,
   StringSelectMenuBuilder, ChannelType, MessageFlags,
+  ModalBuilder, TextInputBuilder, TextInputStyle,
 } = require('discord.js');
 const {
   loadServerConfig, saveServerConfig,
@@ -15,7 +16,7 @@ const {
   getGamingRoomMessages, addGamingRoomMessage, removeGamingRoomMessage,
   getPackAnnounceChannel, setPackAnnounceChannel,
   getEncounterConfig, setEncounterConfig,
-  formatIntervalMs,
+  formatIntervalMs, parseIntervalInput,
 } = require('../utils/database');
 const { sendGamingRoomEmbed } = require('./gaming_room');
 const { PSG_BLUE, PSG_RED, PSG_FOOTER_ICON, MINIGAME_CONFIG } = require('../config/settings');
@@ -213,15 +214,19 @@ async function handleConfigInteraction(interaction) {
     const currentChannelId = getMinigameChannel(guildId);
     const currentChannel   = currentChannelId ? guild.channels.cache.get(currentChannelId) : null;
     const nextTime         = currentChannelId ? getNextMinigameTime(guildId) : null;
-    const { interval_ms, start_hour, end_hour } = getEncounterConfig(guildId);
+    const { interval_min_ms, interval_max_ms, start_hour, end_hour, timeout_s } = getEncounterConfig(guildId);
+
+    const intervalDisplay = interval_min_ms === interval_max_ms
+      ? `**${formatIntervalMs(interval_min_ms)}**`
+      : `entre **${formatIntervalMs(interval_min_ms)}** et **${formatIntervalMs(interval_max_ms)}**`;
 
     const embed = new EmbedBuilder()
       .setTitle('⚡ PSG Encounter')
       .setDescription(
         '**PSG Encounter** est un événement automatique avec une carte à gagner via un quiz !\n\n'
-        + `📅 **Intervalle :** **${formatIntervalMs(interval_ms)}** après chaque Encounter\n`
+        + `📅 **Intervalle :** ${intervalDisplay} après chaque Encounter\n`
         + `🕐 **Fourchette horaire :** entre **${String(start_hour).padStart(2, '0')}h00** et **${String(end_hour).padStart(2, '0')}h00** (heure tirée aléatoirement)\n`
-        + `⏱️ **Temps de réponse :** ${MINIGAME_CONFIG.timeout} secondes\n\n`
+        + `⏱️ **Temps de réponse :** ${timeout_s ?? MINIGAME_CONFIG.timeout} secondes\n\n`
         + `**Salon actuel :** ${currentChannel ? currentChannel.toString() : 'Aucun ❌'}\n`
         + (nextTime ? `**Prochain Encounter :** <t:${Math.floor(nextTime.getTime() / 1000)}:F> (<t:${Math.floor(nextTime.getTime() / 1000)}:R>)` : ''),
       )
@@ -256,65 +261,62 @@ async function handleConfigInteraction(interaction) {
     return safeReply(interaction, { content: '✅ Salon Encounter retiré. Aucun Encounter ne sera spawné.' });
   }
 
-  // ── Sous-panneau : intervalle + fourchette horaire (select menus, sans modal) ──
+  // ── Sous-panneau : intervalle + fourchette horaire + timeout ──────────────
   if (customId === 'config_encounter_settings') {
-    const { interval_ms, start_hour, end_hour } = getEncounterConfig(guildId);
+    const { interval_min_ms, interval_max_ms, start_hour, end_hour, timeout_s } = getEncounterConfig(guildId);
 
-    const INTERVALS = [
-      { label: '5 minutes',  value: 'enc_int__300000' },
-      { label: '15 minutes', value: 'enc_int__900000' },
-      { label: '30 minutes', value: 'enc_int__1800000' },
-      { label: '1 heure',    value: 'enc_int__3600000' },
-      { label: '2 heures',   value: 'enc_int__7200000' },
-      { label: '4 heures',   value: 'enc_int__14400000' },
-      { label: '6 heures',   value: 'enc_int__21600000' },
-      { label: '12 heures',  value: 'enc_int__43200000' },
-      { label: '1 jour',     value: 'enc_int__86400000' },
-      { label: '2 jours',    value: 'enc_int__172800000' },
-      { label: '3 jours',    value: 'enc_int__259200000' },
-      { label: '7 jours',    value: 'enc_int__604800000' },
-    ].map(o => ({ ...o, default: String(interval_ms) === o.value.replace('enc_int__', '') }));
+    const intervalDisplay = interval_min_ms === interval_max_ms
+      ? formatIntervalMs(interval_min_ms)
+      : `${formatIntervalMs(interval_min_ms)} → ${formatIntervalMs(interval_max_ms)}`;
 
-    const START_HOURS = Array.from({ length: 23 }, (_, i) => ({
+    const embed = new EmbedBuilder()
+      .setTitle('⚙️ Paramètres des Encounters')
+      .setDescription(
+        `**Paramètres actuels :**\n\n`
+        + `📅 **Intervalle :** ${intervalDisplay}\n`
+        + `🕐 **Fourchette horaire :** ${String(start_hour).padStart(2, '0')}h00 → ${String(end_hour).padStart(2, '0')}h00\n`
+        + `⏱️ **Timeout question :** ${timeout_s ?? MINIGAME_CONFIG.timeout} secondes\n\n`
+        + `**Comment saisir un intervalle :**\n`
+        + `\`3j\` = 3 jours • \`12h\` = 12 heures • \`45m\` = 45 minutes\n\n`
+        + `**Fourchette :** si tu mets \`3j\` et \`7j\`, l'Encounter spawne entre 3 et 7 jours après le dernier, à une heure aléatoire dans ta tranche horaire.\n`
+        + `Si tu mets \`1j\` et \`1j\`, ce sera environ 1 jour.`,
+      )
+      .setColor(0xFFD700)
+      .setFooter({ text: 'Paris Saint-Germain • Encounter Settings', iconURL: PSG_FOOTER_ICON });
+
+    const START_HOURS = Array.from({ length: 24 }, (_, i) => ({
       label:   `Début : ${String(i).padStart(2, '0')}h00`,
       value:   `enc_start__${i}`,
       default: start_hour === i,
     }));
 
-    const END_HOURS = Array.from({ length: 23 }, (_, i) => ({
-      label:   `Fin : ${String(i + 1).padStart(2, '0')}h00`,
-      value:   `enc_end__${i + 1}`,
-      default: end_hour === i + 1,
+    const END_HOURS = Array.from({ length: 24 }, (_, i) => ({
+      label:   `Fin : ${String(i).padStart(2, '0')}h00`,
+      value:   `enc_end__${i}`,
+      default: end_hour === i,
     }));
 
-    const embed = new EmbedBuilder()
-      .setTitle('⚙️ Intervalle & Horaires des Encounters')
-      .setDescription(
-        `Paramètres actuels :\n\n`
-        + `📅 **Intervalle :** ${formatIntervalMs(interval_ms)}\n`
-        + `🕐 **Fourchette :** ${String(start_hour).padStart(2, '0')}h00 → ${String(end_hour).padStart(2, '0')}h00\n\n`
-        + `Sélectionne les nouvelles valeurs ci-dessous.\nChaque menu applique immédiatement le changement.`,
-      )
-      .setColor(0xFFD700)
-      .setFooter({ text: 'Paris Saint-Germain • Encounter Settings', iconURL: PSG_FOOTER_ICON });
-
     const rows = [
+      // ✅ FIX : Bouton modal — NE PAS appeler deferUpdate/update avant showModal
+      // Ce bouton doit déclencher showModal() directement, sans aucun defer préalable
       new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId('config_enc_interval_0')
-          .setPlaceholder('📅 Choisir l\'intervalle entre chaque Encounter')
-          .addOptions(INTERVALS),
+        new ButtonBuilder()
+          .setCustomId('config_enc_modal_open')
+          .setLabel('✏️ Modifier intervalle & timeout')
+          .setStyle(ButtonStyle.Success),
       ),
+      // Menu heure de début
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId('config_enc_start_0')
-          .setPlaceholder('🕐 Heure de début de la fourchette')
+          .setPlaceholder('🕐 Heure de début de la fourchette horaire')
           .addOptions(START_HOURS),
       ),
+      // Menu heure de fin
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId('config_enc_end_0')
-          .setPlaceholder('🕑 Heure de fin de la fourchette')
+          .setPlaceholder('🕑 Heure de fin de la fourchette horaire')
           .addOptions(END_HOURS),
       ),
       new ActionRowBuilder().addComponents(
@@ -325,27 +327,131 @@ async function handleConfigInteraction(interaction) {
     return safeUpdate(interaction, { embeds: [embed], components: rows });
   }
 
-  // ── Application immédiate des valeurs sélectionnées ───────────────────────
-  if (customId.startsWith('config_enc_interval_')) {
-    await interaction.deferUpdate();
-    const newMs = parseInt(interaction.values[0].replace('enc_int__', ''), 10);
+  // ── Ouverture du Modal de saisie libre ───────────────────────────────────
+  // ✅ FIX CRITIQUE : showModal() doit être la PREMIÈRE et UNIQUE réponse à cette interaction.
+  // Ne jamais appeler deferUpdate(), deferReply(), update() ou reply() avant showModal().
+  // handleConfigInteraction doit être appelé AVANT tout acknowledge dans le handler parent.
+  if (customId === 'config_enc_modal_open') {
+    const { interval_min_ms, interval_max_ms, timeout_s } = getEncounterConfig(guildId);
+
+    const currentMin     = _msToInputString(interval_min_ms);
+    const currentMax     = _msToInputString(interval_max_ms);
+    const currentTimeout = String(timeout_s ?? MINIGAME_CONFIG.timeout);
+
+    const modal = new ModalBuilder()
+      .setCustomId('config_enc_modal_submit')
+      .setTitle('⚙️ Paramètres Encounter');
+
+    const minInput = new TextInputBuilder()
+      .setCustomId('enc_modal_min')
+      .setLabel('Intervalle MINIMUM (ex: 1j, 12h, 30m)')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setPlaceholder('ex: 3j ou 12h ou 45m')
+      .setValue(currentMin);
+
+    const maxInput = new TextInputBuilder()
+      .setCustomId('enc_modal_max')
+      .setLabel('Intervalle MAXIMUM (ex: 7j, 24h, 90m)')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setPlaceholder('ex: 7j ou 24h ou 90m')
+      .setValue(currentMax);
+
+    const timeoutInput = new TextInputBuilder()
+      .setCustomId('enc_modal_timeout')
+      .setLabel('Timeout de la question (en secondes)')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setPlaceholder('ex: 60')
+      .setValue(currentTimeout);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(minInput),
+      new ActionRowBuilder().addComponents(maxInput),
+      new ActionRowBuilder().addComponents(timeoutInput),
+    );
+
+    // ✅ showModal() est la réponse directe — aucun defer avant
+    return interaction.showModal(modal);
+  }
+
+  // ── Traitement de la soumission du Modal ──────────────────────────────────
+  if (customId === 'config_enc_modal_submit') {
+    const rawMin     = interaction.fields.getTextInputValue('enc_modal_min').trim();
+    const rawMax     = interaction.fields.getTextInputValue('enc_modal_max').trim();
+    const rawTimeout = interaction.fields.getTextInputValue('enc_modal_timeout').trim();
+
+    const minMs    = parseIntervalInput(rawMin);
+    const maxMs    = parseIntervalInput(rawMax);
+    const timeoutS = parseInt(rawTimeout, 10);
+
+    const errors = [];
+
+    if (minMs === null) {
+      errors.push(`❌ **Intervalle minimum invalide** : \`${rawMin}\`\nFormats acceptés : \`3j\`, \`12h\`, \`45m\``);
+    }
+    if (maxMs === null) {
+      errors.push(`❌ **Intervalle maximum invalide** : \`${rawMax}\`\nFormats acceptés : \`3j\`, \`12h\`, \`45m\``);
+    }
+    if (isNaN(timeoutS) || timeoutS < 10 || timeoutS > 600) {
+      errors.push(`❌ **Timeout invalide** : \`${rawTimeout}\`\nDois être un nombre entier entre **10** et **600** secondes`);
+    }
+    // ✅ FIX : minMs === maxMs est valide (intervalle fixe), on accepte minMs <= maxMs
+    if (minMs !== null && maxMs !== null && minMs > maxMs) {
+      errors.push(`❌ **L'intervalle minimum** (\`${rawMin}\`) ne peut pas être supérieur au maximum (\`${rawMax}\`)`);
+    }
+
+    if (errors.length) {
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('⚠️ Erreur de saisie')
+            .setDescription(errors.join('\n\n'))
+            .setColor(PSG_RED)
+            .setFooter({ text: 'Corrige les valeurs et réessaie', iconURL: PSG_FOOTER_ICON }),
+        ],
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
     const { start_hour, end_hour } = getEncounterConfig(guildId);
-    setEncounterConfig(guildId, { interval_ms: newMs, start_hour, end_hour });
+    setEncounterConfig(guildId, { interval_min_ms: minMs, interval_max_ms: maxMs, start_hour, end_hour, timeout_s: timeoutS });
+
     const nextTime = getNextMinigameTime(guildId);
-    return interaction.editReply({
-      content: `✅ **Intervalle mis à jour : ${formatIntervalMs(newMs)}**\n⏰ Prochain Encounter : <t:${Math.floor(nextTime.getTime() / 1000)}:F> (<t:${Math.floor(nextTime.getTime() / 1000)}:R>)`,
-      embeds: [], components: [],
+
+    const intervalDisplay = minMs === maxMs
+      ? `**${formatIntervalMs(minMs)}**`
+      : `entre **${formatIntervalMs(minMs)}** et **${formatIntervalMs(maxMs)}**`;
+
+    return interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle('✅ Paramètres mis à jour !')
+          .setDescription(
+            `📅 **Intervalle :** ${intervalDisplay}\n`
+            + `⏱️ **Timeout :** ${timeoutS} secondes\n\n`
+            + (nextTime
+              ? `⏰ **Prochain Encounter :** <t:${Math.floor(nextTime.getTime() / 1000)}:F>\n`
+                + `(<t:${Math.floor(nextTime.getTime() / 1000)}:R>)`
+              : '⚠️ Aucun salon Encounter configuré — le prochain spawn sera planifié dès qu\'un salon sera défini.'),
+          )
+          .setColor(0xFFD700)
+          .setFooter({ text: 'Paris Saint-Germain • Encounter Settings', iconURL: PSG_FOOTER_ICON }),
+      ],
+      flags: MessageFlags.Ephemeral,
     });
   }
 
+  // ── Heure de début ────────────────────────────────────────────────────────
   if (customId.startsWith('config_enc_start_')) {
     await interaction.deferUpdate();
     const newStart = parseInt(interaction.values[0].replace('enc_start__', ''), 10);
-    const { interval_ms, end_hour } = getEncounterConfig(guildId);
+    const { interval_min_ms, interval_max_ms, end_hour, timeout_s } = getEncounterConfig(guildId);
     if (newStart >= end_hour) {
       return interaction.editReply({ content: `❌ L'heure de début (**${newStart}h**) doit être inférieure à l'heure de fin (**${end_hour}h**).`, embeds: [], components: [] });
     }
-    setEncounterConfig(guildId, { interval_ms, start_hour: newStart, end_hour });
+    setEncounterConfig(guildId, { interval_min_ms, interval_max_ms, start_hour: newStart, end_hour, timeout_s });
     const nextTime = getNextMinigameTime(guildId);
     return interaction.editReply({
       content: `✅ **Heure de début mise à jour : ${String(newStart).padStart(2, '0')}h00**\n⏰ Prochain Encounter : <t:${Math.floor(nextTime.getTime() / 1000)}:F> (<t:${Math.floor(nextTime.getTime() / 1000)}:R>)`,
@@ -353,14 +459,15 @@ async function handleConfigInteraction(interaction) {
     });
   }
 
+  // ── Heure de fin ──────────────────────────────────────────────────────────
   if (customId.startsWith('config_enc_end_')) {
     await interaction.deferUpdate();
     const newEnd = parseInt(interaction.values[0].replace('enc_end__', ''), 10);
-    const { interval_ms, start_hour } = getEncounterConfig(guildId);
+    const { interval_min_ms, interval_max_ms, start_hour, timeout_s } = getEncounterConfig(guildId);
     if (newEnd <= start_hour) {
       return interaction.editReply({ content: `❌ L'heure de fin (**${newEnd}h**) doit être supérieure à l'heure de début (**${start_hour}h**).`, embeds: [], components: [] });
     }
-    setEncounterConfig(guildId, { interval_ms, start_hour, end_hour: newEnd });
+    setEncounterConfig(guildId, { interval_min_ms, interval_max_ms, start_hour, end_hour: newEnd, timeout_s });
     const nextTime = getNextMinigameTime(guildId);
     return interaction.editReply({
       content: `✅ **Heure de fin mise à jour : ${String(newEnd).padStart(2, '0')}h00**\n⏰ Prochain Encounter : <t:${Math.floor(nextTime.getTime() / 1000)}:F> (<t:${Math.floor(nextTime.getTime() / 1000)}:R>)`,
@@ -563,7 +670,6 @@ async function handleConfigInteraction(interaction) {
       .setColor(PSG_BLUE)
       .setFooter({ text: 'Paris Saint-Germain', iconURL: PSG_FOOTER_ICON });
 
-    // Gaming Room
     const rooms = getGamingRoomMessages(guildId);
     embed.addFields({
       name:   '🕹️ Gaming Room',
@@ -571,20 +677,21 @@ async function handleConfigInteraction(interaction) {
       inline: false,
     });
 
-    // Encounter
     const encId   = getMinigameChannel(guildId);
     const encCh   = encId ? guild.channels.cache.get(encId) : null;
     const encNext = encId ? getNextMinigameTime(guildId) : null;
-    const { interval_ms, start_hour, end_hour } = getEncounterConfig(guildId);
+    const { interval_min_ms, interval_max_ms, start_hour, end_hour, timeout_s } = getEncounterConfig(guildId);
+    const intervalDisplay = interval_min_ms === interval_max_ms
+      ? formatIntervalMs(interval_min_ms)
+      : `${formatIntervalMs(interval_min_ms)}–${formatIntervalMs(interval_max_ms)}`;
     embed.addFields({
       name:   '⚡ Encounter',
       value:  encCh
-        ? `${encCh}\nProchain : <t:${Math.floor(encNext.getTime() / 1000)}:R>\nIntervalle : ${formatIntervalMs(interval_ms)} | Horaires : ${String(start_hour).padStart(2, '0')}h–${String(end_hour).padStart(2, '0')}h`
+        ? `${encCh}\nProchain : <t:${Math.floor(encNext.getTime() / 1000)}:R>\nIntervalle : ${intervalDisplay} | Horaires : ${String(start_hour).padStart(2, '0')}h–${String(end_hour).padStart(2, '0')}h | Timeout : ${timeout_s ?? MINIGAME_CONFIG.timeout}s`
         : 'Non configuré ❌',
       inline: false,
     });
 
-    // Rôles admin
     const adminRoles = getAllowedRoles(guildId, 'admin').map(id => guild.roles.cache.get(id)?.toString()).filter(Boolean);
     embed.addFields({
       name:   '👑 Rôles Admin',
@@ -592,7 +699,6 @@ async function handleConfigInteraction(interaction) {
       inline: false,
     });
 
-    // Rôles config
     const configRoles = getAllowedRoles(guildId, 'config').map(id => guild.roles.cache.get(id)?.toString()).filter(Boolean);
     embed.addFields({
       name:   '🔧 Rôles Config',
@@ -600,16 +706,13 @@ async function handleConfigInteraction(interaction) {
       inline: false,
     });
 
-    // Logs
     const logsCh = config?.logs_channel ? guild.channels.cache.get(config.logs_channel) : null;
     embed.addFields({ name: '📋 Logs', value: logsCh ? logsCh.toString() : 'Non configuré ❌', inline: true });
 
-    // Annonce packs
     const announceChannelId = getPackAnnounceChannel(guildId);
     const announceChannel   = announceChannelId ? guild.channels.cache.get(announceChannelId) : null;
     embed.addFields({ name: '📣 Annonce packs', value: announceChannel ? announceChannel.toString() : 'Non configuré ❌', inline: true });
 
-    // Sans coins (salons)
     const noCoins = getNoCoinsChannels(guildId).map(id => guild.channels.cache.get(id)?.toString()).filter(Boolean);
     embed.addFields({
       name:   '🚫 Sans Coins',
@@ -617,7 +720,6 @@ async function handleConfigInteraction(interaction) {
       inline: true,
     });
 
-    // Sans coins (catégories)
     const noCats = (getNoCoinsCategories ? getNoCoinsCategories(guildId) : [])
       .map(id => { const c = guild.channels.cache.get(id); return c ? `📁 ${c.name}` : null; }).filter(Boolean);
     embed.addFields({
@@ -628,6 +730,15 @@ async function handleConfigInteraction(interaction) {
 
     return safeUpdate(interaction, { embeds: [embed], components: createMainComponents() });
   }
+}
+
+// ─── Helper : convertit des ms en string saisissable (ex: 86400000 → "1j") ──
+
+function _msToInputString(ms) {
+  if (!ms) return '1j';
+  if (ms >= 86_400_000 && ms % 86_400_000 === 0) return `${ms / 86_400_000}j`;
+  if (ms >= 3_600_000  && ms % 3_600_000  === 0) return `${ms / 3_600_000}h`;
+  return `${Math.round(ms / 60_000)}m`;
 }
 
 module.exports = { configCommand, handleConfigInteraction };

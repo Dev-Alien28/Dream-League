@@ -223,6 +223,12 @@ function buildCommandsJSON() {
         },
       ],
     },
+    // ── /stats ────────────────────────────────────────────────────────────────
+    {
+      name: 'stats',
+      description: '[ADMIN] Afficher les statistiques complètes de PSG Dream League',
+      default_member_permissions: null,
+    },
   ];
 }
 

@@ -7,6 +7,7 @@ const { addCoinsCommand, removeCoinsCommand, setCoinsCommand, removeCardCommand,
 const { giveCommand } = require('../commands/give');
 const { configCommand, handleConfigInteraction } = require('../commands/config');
 const { handleMinigameAnswer } = require('../commands/minigame');
+const { statsCommand, handleStatsRefresh } = require('../commands/stats'); // ← AJOUT stats
 const {
   handleBoosters,
   handleBuyPack,
@@ -61,6 +62,9 @@ function setupCommands(client) {
           case 'rappel':
             await rappelCommand(interaction);
             break;
+          case 'stats':                        // ← AJOUT stats
+            await statsCommand(interaction);
+            break;
           default:
             await interaction.reply({ content: '❌ Commande inconnue.', flags: MessageFlags.Ephemeral });
         }
@@ -77,6 +81,32 @@ function setupCommands(client) {
       }
     }
 
+    // ==================== MODALS ====================
+    // ⚠️ IMPORTANT : isModalSubmit() doit être vérifié AVANT isButton() et isStringSelectMenu()
+    // car showModal() est une réponse directe — ne jamais defer avant d'ouvrir un modal.
+    else if (interaction.isModalSubmit()) {
+      const { customId } = interaction;
+
+      try {
+        // ── Config Encounter modal ──
+        if (customId === 'config_enc_modal_submit') {
+          await handleConfigInteraction(interaction);
+          return;
+        }
+
+        // Ajoute ici d'autres modals si nécessaire
+        // if (customId === 'autre_modal') { ... }
+
+      } catch (error) {
+        console.error(`❌ Erreur modal ${customId}:`, error);
+        try {
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ content: '❌ Une erreur est survenue.', flags: MessageFlags.Ephemeral });
+          }
+        } catch { /* expirée */ }
+      }
+    }
+
     // ==================== BOUTONS ====================
     else if (interaction.isButton()) {
       const { customId } = interaction;
@@ -84,6 +114,9 @@ function setupCommands(client) {
       try {
         // ── Admin removecard ──
         if (customId.startsWith('admin_removecard_')) { await handleRemoveCardInteraction(interaction); return; }
+
+        // ── Stats refresh ──────────────────────────────────────────────────
+        if (customId.startsWith('stats_refresh_')) { await handleStatsRefresh(interaction); return; }
 
         // ── Gaming Room ──
         if (customId === 'gr_boosters')     { await handleBoosters(interaction); return; }
@@ -121,6 +154,8 @@ function setupCommands(client) {
         }
 
         // ── Config ──
+        // ⚠️ Le bouton config_enc_modal_open appelle showModal() dans handleConfigInteraction.
+        // Il NE FAUT PAS defer cette interaction — handleConfigInteraction gère tout en interne.
         if (customId.startsWith('config_')) { await handleConfigInteraction(interaction); return; }
 
       } catch (error) {

@@ -1,0 +1,416 @@
+[
+  {
+    "id": "joueur_gk_safonov_home_adv_100",
+    "type": "joueur",
+    "nom": "Matveï Safonov 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Gardien",
+    "stats": {"physique": 89, "agilité": 90, "arrêt": 90},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_gk_chevalier_home_adv_101",
+    "type": "joueur",
+    "nom": "Lucas Chevalier 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Gardien",
+    "stats": {"physique": 86, "agilité": 86, "arrêt": 86},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_gk_safonov_home_elite_102",
+    "type": "joueur",
+    "nom": "Matveï Safonov 25/26 Home",
+    "rareté": "Elite",
+    "position": "Gardien",
+    "stats": {"physique": 92, "agilité": 93, "arrêt": 93},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_gk_chevalier_home_elite_103",
+    "type": "joueur",
+    "nom": "Lucas Chevalier 25/26 Home",
+    "rareté": "Elite",
+    "position": "Gardien",
+    "stats": {"physique": 89, "agilité": 89, "arrêt": 89},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_pacho_home_adv_104",
+    "type": "joueur",
+    "nom": "Willian Pacho 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 90, "pression": 91, "physique": 90},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_mendes_home_adv_105",
+    "type": "joueur",
+    "nom": "Nuno Mendes 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 88, "pression": 90, "physique": 89},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_hakimi_home_adv_106",
+    "type": "joueur",
+    "nom": "Achraf Hakimi 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 87, "pression": 90, "physique": 88},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_marquinhos_home_adv_107",
+    "type": "joueur",
+    "nom": "Marquinhos 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 89, "pression": 88, "physique": 87},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_hernandez_home_adv_108",
+    "type": "joueur",
+    "nom": "Lucas Hernández 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 84, "pression": 86, "physique": 87},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_beraldo_home_adv_109",
+    "type": "joueur",
+    "nom": "Lucas Beraldo 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 85, "pression": 85, "physique": 85},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_zabarnyi_home_adv_110",
+    "type": "joueur",
+    "nom": "Illya Zabarnyi 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {"intelligence": 84, "pression": 83, "physique": 85},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_pacho_home_elite_111",
+    "type": "joueur",
+    "nom": "Willian Pacho 25/26 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 93, "pression": 94, "physique": 93},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_mendes_home_elite_112",
+    "type": "joueur",
+    "nom": "Nuno Mendes 25/26 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 91, "pression": 93, "physique": 92},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_hakimi_home_elite_113",
+    "type": "joueur",
+    "nom": "Achraf Hakimi 25/26 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 90, "pression": 93, "physique": 91},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_marquinhos_home_elite_114",
+    "type": "joueur",
+    "nom": "Marquinhos 25/26 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 92, "pression": 91, "physique": 90},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_hernandez_home_elite_115",
+    "type": "joueur",
+    "nom": "Lucas Hernández 25/26 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 87, "pression": 89, "physique": 90},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_beraldo_home_elite_116",
+    "type": "joueur",
+    "nom": "Lucas Beraldo 25/26 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 88, "pression": 88, "physique": 88},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_zabarnyi_home_elite_117",
+    "type": "joueur",
+    "nom": "Illya Zabarnyi 25/26 Home",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {"intelligence": 87, "pression": 86, "physique": 88},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_vitinha_home_adv_118",
+    "type": "joueur",
+    "nom": "Vitinha 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 90, "intelligence": 89, "contrôle": 90},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_neves_home_adv_119",
+    "type": "joueur",
+    "nom": "João Neves 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 88, "intelligence": 89, "contrôle": 90},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_zaire_home_adv_120",
+    "type": "joueur",
+    "nom": "Warren Zaïre-Emery 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 87, "intelligence": 89, "contrôle": 90},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_fabian_home_adv_121",
+    "type": "joueur",
+    "nom": "Fabián Ruiz 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 88, "intelligence": 87, "contrôle": 88},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_mayulu_home_adv_122",
+    "type": "joueur",
+    "nom": "Senny Mayulu 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 85, "intelligence": 83, "contrôle": 84},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_kangin_home_adv_123",
+    "type": "joueur",
+    "nom": "Kang-in Lee 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 86, "intelligence": 82, "contrôle": 83},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_dro_home_adv_124",
+    "type": "joueur",
+    "nom": "Dro Fernández 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 84, "intelligence": 82, "contrôle": 82},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_ndjantou_home_adv_125",
+    "type": "joueur",
+    "nom": "Quentin Ndjantou 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {"technique": 82, "intelligence": 82, "contrôle": 82},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_vitinha_home_elite_126",
+    "type": "joueur",
+    "nom": "Vitinha 25/26 Home",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 93, "intelligence": 92, "contrôle": 93},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_neves_home_elite_127",
+    "type": "joueur",
+    "nom": "João Neves 25/26 Home",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 91, "intelligence": 92, "contrôle": 93},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_zaire_home_elite_128",
+    "type": "joueur",
+    "nom": "Warren Zaïre-Emery 25/26 Home",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 90, "intelligence": 92, "contrôle": 93},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_fabian_home_elite_129",
+    "type": "joueur",
+    "nom": "Fabián Ruiz 25/26 Home",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 91, "intelligence": 90, "contrôle": 91},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_mayulu_home_elite_130",
+    "type": "joueur",
+    "nom": "Senny Mayulu 25/26 Home",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 88, "intelligence": 86, "contrôle": 87},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_kangin_home_elite_131",
+    "type": "joueur",
+    "nom": "Kang-in Lee 25/26 Home",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 89, "intelligence": 85, "contrôle": 86},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_dro_home_elite_132",
+    "type": "joueur",
+    "nom": "Dro Fernández 25/26 Home",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 87, "intelligence": 85, "contrôle": 85},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_ndjantou_home_elite_133",
+    "type": "joueur",
+    "nom": "Quentin Ndjantou 25/26 Home",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {"technique": 85, "intelligence": 85, "contrôle": 85},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_dembele_home_adv_134",
+    "type": "joueur",
+    "nom": "Ousmane Dembélé 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 90, "technique": 93, "contrôle": 90},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_kvara_home_adv_135",
+    "type": "joueur",
+    "nom": "Khvicha Kvaratskhelia 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 92, "technique": 91, "contrôle": 90},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_doue_home_adv_136",
+    "type": "joueur",
+    "nom": "Désiré Doué 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 88, "technique": 89, "contrôle": 89},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_barcola_home_adv_137",
+    "type": "joueur",
+    "nom": "Bradley Barcola 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 86, "technique": 89, "contrôle": 87},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_ramos_home_adv_138",
+    "type": "joueur",
+    "nom": "Gonçalo Ramos 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 95, "technique": 82, "contrôle": 82},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_mbaye_home_adv_139",
+    "type": "joueur",
+    "nom": "Ibrahim Mbaye 25/26 Home",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {"frappe": 82, "technique": 82, "contrôle": 82},
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_dembele_home_elite_140",
+    "type": "joueur",
+    "nom": "Ousmane Dembélé 25/26 Home",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 93, "technique": 96, "contrôle": 93},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_kvara_home_elite_141",
+    "type": "joueur",
+    "nom": "Khvicha Kvaratskhelia 25/26 Home",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 95, "technique": 94, "contrôle": 93},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_doue_home_elite_142",
+    "type": "joueur",
+    "nom": "Désiré Doué 25/26 Home",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 91, "technique": 92, "contrôle": 91},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_barcola_home_elite_143",
+    "type": "joueur",
+    "nom": "Bradley Barcola 25/26 Home",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 89, "technique": 92, "contrôle": 90},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_ramos_home_elite_144",
+    "type": "joueur",
+    "nom": "Gonçalo Ramos 25/26 Home",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 98, "technique": 85, "contrôle": 85},
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_mbaye_home_elite_145",
+    "type": "joueur",
+    "nom": "Ibrahim Mbaye 25/26 Home",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {"frappe": 85, "technique": 85, "contrôle": 85},
+    "image": "images/cards/Carte_3.png"
+  }
+]
