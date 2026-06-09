@@ -1,0 +1,1342 @@
+[
+  {
+    "id": "joueur_att_mbappe_edf_basic_200",
+    "type": "joueur",
+    "nom": "Kylian Mbappé EDF",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 87,
+      "technique": 86,
+      "contrôle": 85
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_dembele_edf_basic_201",
+    "type": "joueur",
+    "nom": "Ousmane Dembélé EDF",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 84,
+      "technique": 86,
+      "contrôle": 85
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_rocheteau_edf_basic_202",
+    "type": "joueur",
+    "nom": "Dominique Rocheteau EDF",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 85,
+      "technique": 83,
+      "contrôle": 83
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_anelka_edf_basic_203",
+    "type": "joueur",
+    "nom": "Nicolas Anelka EDF",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 83,
+      "technique": 83,
+      "contrôle": 84
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_doue_edf_basic_204",
+    "type": "joueur",
+    "nom": "Désiré Doué EDF",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 83,
+      "technique": 82,
+      "contrôle": 83
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_barcola_edf_basic_205",
+    "type": "joueur",
+    "nom": "Bradley Barcola EDF",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 81,
+      "technique": 81,
+      "contrôle": 81
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_coman_edf_basic_206",
+    "type": "joueur",
+    "nom": "Kingsley Coman EDF",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 79,
+      "technique": 81,
+      "contrôle": 81
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_kolomuani_edf_basic_207",
+    "type": "joueur",
+    "nom": "Randal Kolo Muani EDF",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 75,
+      "technique": 74,
+      "contrôle": 76
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_couriol_edf_basic_208",
+    "type": "joueur",
+    "nom": "Alain Couriol EDF",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 72,
+      "technique": 73,
+      "contrôle": 74
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_xuereb_edf_basic_209",
+    "type": "joueur",
+    "nom": "Daniel Xuereb EDF",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 71,
+      "technique": 71,
+      "contrôle": 72
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_mbappe_edf_adv_210",
+    "type": "joueur",
+    "nom": "Kylian Mbappé EDF",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 90,
+      "technique": 89,
+      "contrôle": 88
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_dembele_edf_adv_211",
+    "type": "joueur",
+    "nom": "Ousmane Dembélé EDF",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 87,
+      "technique": 89,
+      "contrôle": 88
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_rocheteau_edf_adv_212",
+    "type": "joueur",
+    "nom": "Dominique Rocheteau EDF",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 88,
+      "technique": 86,
+      "contrôle": 86
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_anelka_edf_adv_213",
+    "type": "joueur",
+    "nom": "Nicolas Anelka EDF",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 86,
+      "technique": 86,
+      "contrôle": 87
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_doue_edf_adv_214",
+    "type": "joueur",
+    "nom": "Désiré Doué EDF",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 86,
+      "technique": 85,
+      "contrôle": 86
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_barcola_edf_adv_215",
+    "type": "joueur",
+    "nom": "Bradley Barcola EDF",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 84,
+      "technique": 84,
+      "contrôle": 84
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_coman_edf_adv_216",
+    "type": "joueur",
+    "nom": "Kingsley Coman EDF",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 82,
+      "technique": 84,
+      "contrôle": 84
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_kolomuani_edf_adv_217",
+    "type": "joueur",
+    "nom": "Randal Kolo Muani EDF",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 78,
+      "technique": 77,
+      "contrôle": 79
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_couriol_edf_adv_218",
+    "type": "joueur",
+    "nom": "Alain Couriol EDF",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 75,
+      "technique": 76,
+      "contrôle": 77
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_xuereb_edf_adv_219",
+    "type": "joueur",
+    "nom": "Daniel Xuereb EDF",
+    "rareté": "Advanced",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 74,
+      "technique": 74,
+      "contrôle": 75
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_att_mbappe_edf_elite_220",
+    "type": "joueur",
+    "nom": "Kylian Mbappé EDF",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 93,
+      "technique": 92,
+      "contrôle": 91
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_dembele_edf_elite_221",
+    "type": "joueur",
+    "nom": "Ousmane Dembélé EDF",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 90,
+      "technique": 92,
+      "contrôle": 91
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_rocheteau_edf_elite_222",
+    "type": "joueur",
+    "nom": "Dominique Rocheteau EDF",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 91,
+      "technique": 89,
+      "contrôle": 89
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_anelka_edf_elite_223",
+    "type": "joueur",
+    "nom": "Nicolas Anelka EDF",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 89,
+      "technique": 89,
+      "contrôle": 90
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_doue_edf_elite_224",
+    "type": "joueur",
+    "nom": "Désiré Doué EDF",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 89,
+      "technique": 88,
+      "contrôle": 89
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_barcola_edf_elite_225",
+    "type": "joueur",
+    "nom": "Bradley Barcola EDF",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 87,
+      "technique": 87,
+      "contrôle": 87
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_coman_edf_elite_226",
+    "type": "joueur",
+    "nom": "Kingsley Coman EDF",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 85,
+      "technique": 87,
+      "contrôle": 87
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_kolomuani_edf_elite_227",
+    "type": "joueur",
+    "nom": "Randal Kolo Muani EDF",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 81,
+      "technique": 80,
+      "contrôle": 82
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_couriol_edf_elite_228",
+    "type": "joueur",
+    "nom": "Alain Couriol EDF",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 78,
+      "technique": 79,
+      "contrôle": 80
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_xuereb_edf_elite_229",
+    "type": "joueur",
+    "nom": "Daniel Xuereb EDF",
+    "rareté": "Elite",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 77,
+      "technique": 77,
+      "contrôle": 78
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_att_mbappe_edf_legend_230",
+    "type": "joueur",
+    "nom": "Kylian Mbappé EDF",
+    "rareté": "Legend",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 96,
+      "technique": 95,
+      "contrôle": 94
+    },
+    "image": "images/cards/mbappe.png",
+    "artiste": "@.raizo._"
+  },
+  {
+    "id": "joueur_mid_fernandez_edf_basic_231",
+    "type": "joueur",
+    "nom": "Luis Fernandez EDF",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 82,
+      "intelligence": 87,
+      "contrôle": 83
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_makelele_edf_basic_232",
+    "type": "joueur",
+    "nom": "Claude Makélélé EDF",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 83,
+      "intelligence": 86,
+      "contrôle": 82
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_djorkaeff_edf_basic_233",
+    "type": "joueur",
+    "nom": "Youri Djorkaeff EDF",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 85,
+      "intelligence": 84,
+      "contrôle": 86
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_matuidi_edf_basic_234",
+    "type": "joueur",
+    "nom": "Blaise Matuidi EDF",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 84,
+      "intelligence": 82,
+      "contrôle": 82
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_zaireemery_edf_basic_235",
+    "type": "joueur",
+    "nom": "Warren Zaïre-Emery EDF",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 81,
+      "intelligence": 81,
+      "contrôle": 81
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_bathenay_edf_basic_236",
+    "type": "joueur",
+    "nom": "Dominique Bathenay EDF",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 78,
+      "intelligence": 79,
+      "contrôle": 80
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_cabaye_edf_basic_237",
+    "type": "joueur",
+    "nom": "Yohan Cabaye EDF",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 77,
+      "intelligence": 76,
+      "contrôle": 78
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_dhorasoo_edf_basic_238",
+    "type": "joueur",
+    "nom": "Vikash Dhorasoo EDF",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 74,
+      "intelligence": 74,
+      "contrôle": 76
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_nzonzi_edf_basic_239",
+    "type": "joueur",
+    "nom": "Steven Nzonzi EDF",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 71,
+      "intelligence": 73,
+      "contrôle": 70
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_rabiot_edf_basic_240",
+    "type": "joueur",
+    "nom": "Adrien Rabiot EDF",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 69,
+      "intelligence": 69,
+      "contrôle": 69
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_fernandez_edf_adv_241",
+    "type": "joueur",
+    "nom": "Luis Fernandez EDF",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {
+      "technique": 85,
+      "intelligence": 90,
+      "contrôle": 86
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_makelele_edf_adv_242",
+    "type": "joueur",
+    "nom": "Claude Makélélé EDF",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {
+      "technique": 86,
+      "intelligence": 89,
+      "contrôle": 85
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_djorkaeff_edf_adv_243",
+    "type": "joueur",
+    "nom": "Youri Djorkaeff EDF",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {
+      "technique": 88,
+      "intelligence": 87,
+      "contrôle": 89
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_matuidi_edf_adv_244",
+    "type": "joueur",
+    "nom": "Blaise Matuidi EDF",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {
+      "technique": 87,
+      "intelligence": 85,
+      "contrôle": 85
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_zaireemery_edf_adv_245",
+    "type": "joueur",
+    "nom": "Warren Zaïre-Emery EDF",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {
+      "technique": 84,
+      "intelligence": 84,
+      "contrôle": 84
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_bathenay_edf_adv_246",
+    "type": "joueur",
+    "nom": "Dominique Bathenay EDF",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {
+      "technique": 81,
+      "intelligence": 82,
+      "contrôle": 83
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_cabaye_edf_adv_247",
+    "type": "joueur",
+    "nom": "Yohan Cabaye EDF",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {
+      "technique": 80,
+      "intelligence": 79,
+      "contrôle": 81
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_dhorasoo_edf_adv_248",
+    "type": "joueur",
+    "nom": "Vikash Dhorasoo EDF",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {
+      "technique": 77,
+      "intelligence": 77,
+      "contrôle": 79
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_nzonzi_edf_adv_249",
+    "type": "joueur",
+    "nom": "Steven Nzonzi EDF",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {
+      "technique": 74,
+      "intelligence": 76,
+      "contrôle": 73
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_rabiot_edf_adv_250",
+    "type": "joueur",
+    "nom": "Adrien Rabiot EDF",
+    "rareté": "Advanced",
+    "position": "Milieu",
+    "stats": {
+      "technique": 72,
+      "intelligence": 72,
+      "contrôle": 72
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_mid_fernandez_edf_elite_251",
+    "type": "joueur",
+    "nom": "Luis Fernandez EDF",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {
+      "technique": 88,
+      "intelligence": 93,
+      "contrôle": 89
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_makelele_edf_elite_252",
+    "type": "joueur",
+    "nom": "Claude Makélélé EDF",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {
+      "technique": 89,
+      "intelligence": 92,
+      "contrôle": 88
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_djorkaeff_edf_elite_253",
+    "type": "joueur",
+    "nom": "Youri Djorkaeff EDF",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {
+      "technique": 91,
+      "intelligence": 90,
+      "contrôle": 92
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_matuidi_edf_elite_254",
+    "type": "joueur",
+    "nom": "Blaise Matuidi EDF",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {
+      "technique": 90,
+      "intelligence": 88,
+      "contrôle": 88
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_zaireemery_edf_elite_255",
+    "type": "joueur",
+    "nom": "Warren Zaïre-Emery EDF",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {
+      "technique": 87,
+      "intelligence": 87,
+      "contrôle": 87
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_bathenay_edf_elite_256",
+    "type": "joueur",
+    "nom": "Dominique Bathenay EDF",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {
+      "technique": 84,
+      "intelligence": 85,
+      "contrôle": 86
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_cabaye_edf_elite_257",
+    "type": "joueur",
+    "nom": "Yohan Cabaye EDF",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {
+      "technique": 83,
+      "intelligence": 82,
+      "contrôle": 84
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_dhorasoo_edf_elite_258",
+    "type": "joueur",
+    "nom": "Vikash Dhorasoo EDF",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {
+      "technique": 80,
+      "intelligence": 80,
+      "contrôle": 82
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_nzonzi_edf_elite_259",
+    "type": "joueur",
+    "nom": "Steven Nzonzi EDF",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {
+      "technique": 77,
+      "intelligence": 79,
+      "contrôle": 76
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_mid_rabiot_edf_elite_260",
+    "type": "joueur",
+    "nom": "Adrien Rabiot EDF",
+    "rareté": "Elite",
+    "position": "Milieu",
+    "stats": {
+      "technique": 75,
+      "intelligence": 75,
+      "contrôle": 75
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_gk_bats_edf_basic_261",
+    "type": "joueur",
+    "nom": "Joël Bats EDF",
+    "rareté": "Basic",
+    "position": "Gardien",
+    "stats": {
+      "physique": 80,
+      "agilité": 84,
+      "arrêt": 87
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_gk_lama_edf_basic_262",
+    "type": "joueur",
+    "nom": "Bernard Lama EDF",
+    "rareté": "Basic",
+    "position": "Gardien",
+    "stats": {
+      "physique": 77,
+      "agilité": 88,
+      "arrêt": 85
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_gk_baratelli_edf_basic_263",
+    "type": "joueur",
+    "nom": "Dominique Baratelli EDF",
+    "rareté": "Basic",
+    "position": "Gardien",
+    "stats": {
+      "physique": 81,
+      "agilité": 83,
+      "arrêt": 82
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_gk_landreau_edf_basic_264",
+    "type": "joueur",
+    "nom": "Mickaël Landreau EDF",
+    "rareté": "Basic",
+    "position": "Gardien",
+    "stats": {
+      "physique": 80,
+      "agilité": 78,
+      "arrêt": 80
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_gk_coupet_edf_basic_265",
+    "type": "joueur",
+    "nom": "Grégory Coupet EDF",
+    "rareté": "Basic",
+    "position": "Gardien",
+    "stats": {
+      "physique": 81,
+      "agilité": 77,
+      "arrêt": 78
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_gk_areola_edf_basic_266",
+    "type": "joueur",
+    "nom": "Alphonse Areola EDF",
+    "rareté": "Basic",
+    "position": "Gardien",
+    "stats": {
+      "physique": 77,
+      "agilité": 75,
+      "arrêt": 76
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_gk_bats_edf_adv_267",
+    "type": "joueur",
+    "nom": "Joël Bats EDF",
+    "rareté": "Advanced",
+    "position": "Gardien",
+    "stats": {
+      "physique": 83,
+      "agilité": 87,
+      "arrêt": 90
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_gk_lama_edf_adv_268",
+    "type": "joueur",
+    "nom": "Bernard Lama EDF",
+    "rareté": "Advanced",
+    "position": "Gardien",
+    "stats": {
+      "physique": 80,
+      "agilité": 91,
+      "arrêt": 88
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_gk_baratelli_edf_adv_269",
+    "type": "joueur",
+    "nom": "Dominique Baratelli EDF",
+    "rareté": "Advanced",
+    "position": "Gardien",
+    "stats": {
+      "physique": 84,
+      "agilité": 86,
+      "arrêt": 85
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_gk_landreau_edf_adv_270",
+    "type": "joueur",
+    "nom": "Mickaël Landreau EDF",
+    "rareté": "Advanced",
+    "position": "Gardien",
+    "stats": {
+      "physique": 83,
+      "agilité": 81,
+      "arrêt": 83
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_gk_coupet_edf_adv_271",
+    "type": "joueur",
+    "nom": "Grégory Coupet EDF",
+    "rareté": "Advanced",
+    "position": "Gardien",
+    "stats": {
+      "physique": 84,
+      "agilité": 80,
+      "arrêt": 81
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_gk_areola_edf_adv_272",
+    "type": "joueur",
+    "nom": "Alphonse Areola EDF",
+    "rareté": "Advanced",
+    "position": "Gardien",
+    "stats": {
+      "physique": 80,
+      "agilité": 78,
+      "arrêt": 79
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_gk_bats_edf_elite_273",
+    "type": "joueur",
+    "nom": "Joël Bats EDF",
+    "rareté": "Elite",
+    "position": "Gardien",
+    "stats": {
+      "physique": 86,
+      "agilité": 90,
+      "arrêt": 93
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_gk_lama_edf_elite_274",
+    "type": "joueur",
+    "nom": "Bernard Lama EDF",
+    "rareté": "Elite",
+    "position": "Gardien",
+    "stats": {
+      "physique": 83,
+      "agilité": 94,
+      "arrêt": 91
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_gk_baratelli_edf_elite_275",
+    "type": "joueur",
+    "nom": "Dominique Baratelli EDF",
+    "rareté": "Elite",
+    "position": "Gardien",
+    "stats": {
+      "physique": 87,
+      "agilité": 89,
+      "arrêt": 88
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_gk_landreau_edf_elite_276",
+    "type": "joueur",
+    "nom": "Mickaël Landreau EDF",
+    "rareté": "Elite",
+    "position": "Gardien",
+    "stats": {
+      "physique": 86,
+      "agilité": 84,
+      "arrêt": 86
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_gk_coupet_edf_elite_277",
+    "type": "joueur",
+    "nom": "Grégory Coupet EDF",
+    "rareté": "Elite",
+    "position": "Gardien",
+    "stats": {
+      "physique": 87,
+      "agilité": 83,
+      "arrêt": 84
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_gk_areola_edf_elite_278",
+    "type": "joueur",
+    "nom": "Alphonse Areola EDF",
+    "rareté": "Elite",
+    "position": "Gardien",
+    "stats": {
+      "physique": 83,
+      "agilité": 81,
+      "arrêt": 82
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_sakho_edf_basic_279",
+    "type": "joueur",
+    "nom": "Mamadou Sakho EDF",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 85,
+      "pression": 83,
+      "physique": 86
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_lhernandez_edf_basic_280",
+    "type": "joueur",
+    "nom": "Lucas Hernandez EDF",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 84,
+      "pression": 82,
+      "physique": 84
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_kimpembe_edf_basic_281",
+    "type": "joueur",
+    "nom": "Presnel Kimpembe EDF",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 81,
+      "pression": 80,
+      "physique": 84
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_digne_edf_basic_282",
+    "type": "joueur",
+    "nom": "Lucas Digne EDF",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 79,
+      "pression": 80,
+      "physique": 78
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_janvion_edf_basic_283",
+    "type": "joueur",
+    "nom": "Gérard Janvion EDF",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 77,
+      "pression": 75,
+      "physique": 78
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_leroux_edf_basic_284",
+    "type": "joueur",
+    "nom": "Yvon Le Roux EDF",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 74,
+      "pression": 75,
+      "physique": 77
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_ayache_edf_basic_285",
+    "type": "joueur",
+    "nom": "William Ayache EDF",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 73,
+      "pression": 73,
+      "physique": 74
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_bibard_edf_basic_286",
+    "type": "joueur",
+    "nom": "Michel Bibard EDF",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 71,
+      "pression": 71,
+      "physique": 73
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_sakho_edf_adv_287",
+    "type": "joueur",
+    "nom": "Mamadou Sakho EDF",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 88,
+      "pression": 86,
+      "physique": 89
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_lhernandez_edf_adv_288",
+    "type": "joueur",
+    "nom": "Lucas Hernandez EDF",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 87,
+      "pression": 85,
+      "physique": 87
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_kimpembe_edf_adv_289",
+    "type": "joueur",
+    "nom": "Presnel Kimpembe EDF",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 84,
+      "pression": 83,
+      "physique": 87
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_digne_edf_adv_290",
+    "type": "joueur",
+    "nom": "Lucas Digne EDF",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 82,
+      "pression": 83,
+      "physique": 81
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_janvion_edf_adv_291",
+    "type": "joueur",
+    "nom": "Gérard Janvion EDF",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 80,
+      "pression": 78,
+      "physique": 81
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_leroux_edf_adv_292",
+    "type": "joueur",
+    "nom": "Yvon Le Roux EDF",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 77,
+      "pression": 78,
+      "physique": 80
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_ayache_edf_adv_293",
+    "type": "joueur",
+    "nom": "William Ayache EDF",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 76,
+      "pression": 76,
+      "physique": 77
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_bibard_edf_adv_294",
+    "type": "joueur",
+    "nom": "Michel Bibard EDF",
+    "rareté": "Advanced",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 74,
+      "pression": 74,
+      "physique": 76
+    },
+    "image": "images/cards/Carte_2.png"
+  },
+  {
+    "id": "joueur_def_sakho_edf_elite_295",
+    "type": "joueur",
+    "nom": "Mamadou Sakho EDF",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 91,
+      "pression": 89,
+      "physique": 92
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_lhernandez_edf_elite_296",
+    "type": "joueur",
+    "nom": "Lucas Hernandez EDF",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 90,
+      "pression": 88,
+      "physique": 90
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_kimpembe_edf_elite_297",
+    "type": "joueur",
+    "nom": "Presnel Kimpembe EDF",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 87,
+      "pression": 86,
+      "physique": 90
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_digne_edf_elite_298",
+    "type": "joueur",
+    "nom": "Lucas Digne EDF",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 85,
+      "pression": 86,
+      "physique": 84
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_janvion_edf_elite_299",
+    "type": "joueur",
+    "nom": "Gérard Janvion EDF",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 83,
+      "pression": 81,
+      "physique": 84
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_leroux_edf_elite_300",
+    "type": "joueur",
+    "nom": "Yvon Le Roux EDF",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 80,
+      "pression": 81,
+      "physique": 83
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_ayache_edf_elite_301",
+    "type": "joueur",
+    "nom": "William Ayache EDF",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 79,
+      "pression": 79,
+      "physique": 80
+    },
+    "image": "images/cards/Carte_3.png"
+  },
+  {
+    "id": "joueur_def_bibard_edf_elite_302",
+    "type": "joueur",
+    "nom": "Michel Bibard EDF",
+    "rareté": "Elite",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 77,
+      "pression": 77,
+      "physique": 79
+    },
+    "image": "images/cards/Carte_3.png"
+  }
+]

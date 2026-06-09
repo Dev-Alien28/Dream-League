@@ -11,7 +11,10 @@ console.log(`🔑 Token détecté: ${TOKEN.slice(0, 10)}...`);
 
 const { setupEvents } = require('./handlers/events');
 const { setupCommands } = require('./handlers/commands');
-const { setupAutoReminder } = require('./commands/auto_reminder');
+
+// 🔥 Minigame system (V2)
+const { getNextMinigameTime, scheduleNextMinigame } = require('./utils/database');
+const { spawnMinigame } = require('./commands/minigame');
 
 // Créer les dossiers nécessaires
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -34,17 +37,47 @@ const client = new Client({
 
 console.log('\n🔴🔵 Initialisation du bot PSG...');
 
-// Setup des événements, commandes et rappels
 setupEvents(client);
 console.log('✅ Événements configurés');
 
 setupCommands(client);
 console.log('✅ Commandes configurées');
 
-setupAutoReminder(client);
-console.log('✅ Système de rappel automatique configuré');
+// ==================== 🧠 SCHEDULER MINIGAME (V2) ====================
 
-// Connexion
+client.once('clientReady', (client) => {
+  console.log(`\n✅ Connecté en tant que ${client.user.tag}`);
+  console.log('🧠 Scheduler minigame actif');
+
+  setInterval(() => {
+    const now = Date.now();
+
+    client.guilds.cache.forEach(guild => {
+      const guildId = guild.id;
+      const nextTime = getNextMinigameTime(guildId);
+
+      if (!nextTime) return;
+
+      const timeLeft = nextTime.getTime() - now;
+
+      // 🔥 Spawn si temps atteint
+      if (timeLeft <= 0 && timeLeft > -15000) {
+        console.log(`🔥 [MINIGAME] Spawn sur ${guild.name}`);
+
+        try {
+          spawnMinigame(client, guildId);
+          scheduleNextMinigame(guildId);
+        } catch (err) {
+          console.error(`❌ Erreur spawn minigame ${guild.name}:`, err.message);
+        }
+      }
+    });
+
+  }, 10000); // check toutes les 10 secondes
+});
+
+// ==================== CONNEXION ====================
+
 console.log('\n📋 Connexion à Discord...');
 client.login(TOKEN).catch((error) => {
   if (error.code === 'TokenInvalid' || error.message?.includes('TOKEN_INVALID')) {
@@ -60,8 +93,7 @@ client.login(TOKEN).catch((error) => {
   process.exit(1);
 });
 
-// Gestion des erreurs non capturées
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
   console.error('⚠️ Rejet non géré:', reason);
 });
 
