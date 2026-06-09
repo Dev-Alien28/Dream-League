@@ -1,0 +1,210 @@
+[
+  {
+    "id": "joueur_gk_apoula_starter_001",
+    "type": "joueur",
+    "nom": "Apoula Edel Starter",
+    "rareté": "Basic",
+    "position": "Gardien",
+    "stats": {
+      "physique": 60,
+      "agilité": 60,
+      "arrêt": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_gk_kokkinis_starter_002",
+    "type": "joueur",
+    "nom": "Thomas Kokkinis Starter",
+    "rareté": "Basic",
+    "position": "Gardien",
+    "stats": {
+      "physique": 60,
+      "agilité": 60,
+      "arrêt": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_kurzawa_starter_003",
+    "type": "joueur",
+    "nom": "Layvin Kurzawa Starter",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 60,
+      "pression": 60,
+      "physique": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_coelho_starter_004",
+    "type": "joueur",
+    "nom": "Humberto Coelho Starter",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 60,
+      "pression": 60,
+      "physique": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_tanasi_starter_005",
+    "type": "joueur",
+    "nom": "Franck Tanasi Starter",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 60,
+      "pression": 60,
+      "physique": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_zajaczkowski_starter_006",
+    "type": "joueur",
+    "nom": "Christian Zajaczkowski Starter",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 60,
+      "pression": 60,
+      "physique": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_def_ngotty_starter_007",
+    "type": "joueur",
+    "nom": "Bruno N'Gotty Starter",
+    "rareté": "Basic",
+    "position": "Défenseur",
+    "stats": {
+      "intelligence": 60,
+      "pression": 60,
+      "physique": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_rsanches_starter_008",
+    "type": "joueur",
+    "nom": "Renato Sanches Starter",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 60,
+      "intelligence": 60,
+      "contrôle": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_cisse_starter_009",
+    "type": "joueur",
+    "nom": "Édouard Cissé Starter",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 60,
+      "intelligence": 60,
+      "contrôle": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_ugarte_starter_010",
+    "type": "joueur",
+    "nom": "Manuel Ugarte Starter",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 60,
+      "intelligence": 60,
+      "contrôle": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_alcantara_starter_011",
+    "type": "joueur",
+    "nom": "Rafael Alcántara Starter",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 60,
+      "intelligence": 60,
+      "contrôle": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_mid_bodmer_starter_016",
+    "type": "joueur",
+    "nom": "Mathieu Bodmer Starter",
+    "rareté": "Basic",
+    "position": "Milieu",
+    "stats": {
+      "technique": 60,
+      "intelligence": 60,
+      "contrôle": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_vujovic_starter_012",
+    "type": "joueur",
+    "nom": "Zlatko Vujović Starter",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 60,
+      "technique": 60,
+      "contrôle": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_loko_starter_013",
+    "type": "joueur",
+    "nom": "Patrice Loko Starter",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 60,
+      "technique": 60,
+      "contrôle": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_ikone_starter_014",
+    "type": "joueur",
+    "nom": "Jonathan Ikoné Starter",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 60,
+      "technique": 60,
+      "contrôle": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  },
+  {
+    "id": "joueur_att_hoarau_starter_015",
+    "type": "joueur",
+    "nom": "Guillaume Hoarau Starter",
+    "rareté": "Basic",
+    "position": "Attaquant",
+    "stats": {
+      "frappe": 60,
+      "technique": 60,
+      "contrôle": 60
+    },
+    "image": "images/cards/Carte_1.png"
+  }
+]

@@ -1,4 +1,4 @@
-// src/handlers/events.js - Gestion des événements Discord
+// src/handlers/events.js - Gestion des événements Discord — V4
 const { initFiles, getUserData, saveUserData, getMinigameChannel, getNextMinigameTime, scheduleNextMinigame } = require('../utils/database');
 const { initServerConfig, isCoinsDisabledChannel } = require('../utils/permissions');
 const { COINS_PER_MESSAGE_INTERVAL, MIN_MESSAGE_LENGTH } = require('../config/settings');
@@ -9,8 +9,8 @@ const coinsRateLimit = new Map();
 const COINS_PER_MINUTE_MAX = 4;
 
 function canEarnCoin(guildId, userId) {
-  const key = `${guildId}:${userId}`;
-  const now = Date.now();
+  const key   = `${guildId}:${userId}`;
+  const now   = Date.now();
   const entry = coinsRateLimit.get(key);
   if (!entry || now - entry.windowStart >= 60_000) {
     coinsRateLimit.set(key, { count: 1, windowStart: now });
@@ -74,7 +74,7 @@ function setupEvents(client) {
 
     // ── Vérification immédiate au démarrage ───────────────────────────────────
     for (const guild of client.guilds.cache.values()) {
-      const guildId = String(guild.id);
+      const guildId          = String(guild.id);
       const encounterChannel = getMinigameChannel(guildId);
       console.log(`🔍 [DEBUG] ${guild.name} (${guildId}) — salon encounter : ${encounterChannel ?? 'NON CONFIGURÉ'}`);
       if (!encounterChannel) continue;
@@ -113,10 +113,10 @@ function setupEvents(client) {
     if (!message.guild) return;
     if (message.content.startsWith('/')) return;
 
-    const guildId = String(message.guild.id);
-    const userId = String(message.author.id);
+    const guildId   = String(message.guild.id);
+    const userId    = String(message.author.id);
     const channelId = String(message.channel.id);
-    const parentId = message.channel.parentId ? String(message.channel.parentId) : null;
+    const parentId  = message.channel.parentId ? String(message.channel.parentId) : null;
 
     if (isCoinsDisabledChannel(guildId, channelId, parentId)) return;
 
@@ -145,44 +145,44 @@ function buildCommandsJSON() {
     {
       name: 'addcoins',
       description: '[ADMIN] Ajouter des PSG Coins à un membre',
-      default_member_permissions: null,
+      default_member_permissions: '0',
       options: [
-        { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
-        { name: 'montant', description: 'Montant', type: ApplicationCommandOptionType.Integer, required: true },
+        { name: 'membre',  description: 'Le membre', type: ApplicationCommandOptionType.User,    required: true },
+        { name: 'montant', description: 'Montant',   type: ApplicationCommandOptionType.Integer, required: true },
       ],
     },
     {
       name: 'removecoins',
       description: '[ADMIN] Retirer des PSG Coins à un membre (solde peut être négatif)',
-      default_member_permissions: null,
+      default_member_permissions: '0',
       options: [
-        { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
+        { name: 'membre',  description: 'Le membre',         type: ApplicationCommandOptionType.User,    required: true },
         { name: 'montant', description: 'Montant à retirer', type: ApplicationCommandOptionType.Integer, required: true },
       ],
     },
     {
       name: 'setcoins',
       description: '[ADMIN] Définir le solde exact d\'un membre',
-      default_member_permissions: null,
+      default_member_permissions: '0',
       options: [
-        { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
+        { name: 'membre',  description: 'Le membre',     type: ApplicationCommandOptionType.User,    required: true },
         { name: 'montant', description: 'Nouveau solde', type: ApplicationCommandOptionType.Integer, required: true },
       ],
     },
     {
       name: 'give',
       description: '[ADMIN] Donner une carte à un membre',
-      default_member_permissions: null,
+      default_member_permissions: '0',
       options: [
-        { name: 'carte_id', description: "L'ID de la carte", type: ApplicationCommandOptionType.String, required: true },
-        { name: 'membre', description: 'Le membre', type: ApplicationCommandOptionType.User, required: true },
-        { name: 'raison', description: 'Raison (optionnel)', type: ApplicationCommandOptionType.String, required: false },
+        { name: 'carte_id', description: "L'ID de la carte",   type: ApplicationCommandOptionType.String,  required: true  },
+        { name: 'membre',   description: 'Le membre',          type: ApplicationCommandOptionType.User,    required: true  },
+        { name: 'raison',   description: 'Raison (optionnel)', type: ApplicationCommandOptionType.String,  required: false },
       ],
     },
     {
       name: 'removecard',
       description: '[ADMIN] Retirer une carte de la collection d\'un membre',
-      default_member_permissions: null,
+      default_member_permissions: '0',
       options: [
         { name: 'membre', description: 'Le membre dont retirer une carte', type: ApplicationCommandOptionType.User, required: true },
       ],
@@ -190,22 +190,22 @@ function buildCommandsJSON() {
     {
       name: 'config',
       description: '[ADMIN] Configurer le bot de manière interactive',
-      default_member_permissions: null,
+      default_member_permissions: '0',
     },
     {
       name: 'rappel',
       description: '[ADMIN] Gérer les rappels automatiques',
-      default_member_permissions: null,
+      default_member_permissions: '0',
       options: [
         {
           name: 'creer',
           description: 'Créer un nouveau rappel automatique',
           type: ApplicationCommandOptionType.Subcommand,
           options: [
-            { name: 'salon',   description: 'Salon où envoyer le rappel',        type: ApplicationCommandOptionType.Channel,  required: true  },
-            { name: 'message', description: 'Texte du rappel',                   type: ApplicationCommandOptionType.String,   required: true  },
-            { name: 'heures',  description: 'Heure(s) d\'envoi ex: "8h 16h"',   type: ApplicationCommandOptionType.String,   required: true  },
-            { name: 'role',    description: 'Rôle à mentionner (optionnel)',      type: ApplicationCommandOptionType.Role,     required: false },
+            { name: 'salon',   description: 'Salon où envoyer le rappel',      type: ApplicationCommandOptionType.Channel,  required: true  },
+            { name: 'message', description: 'Texte du rappel',                 type: ApplicationCommandOptionType.String,   required: true  },
+            { name: 'heures',  description: 'Heure(s) d\'envoi ex: "8h 16h"', type: ApplicationCommandOptionType.String,   required: true  },
+            { name: 'role',    description: 'Rôle à mentionner (optionnel)',   type: ApplicationCommandOptionType.Role,     required: false },
           ],
         },
         {
@@ -223,11 +223,59 @@ function buildCommandsJSON() {
         },
       ],
     },
-    // ── /stats ────────────────────────────────────────────────────────────────
+    // ── /stats (V2) ───────────────────────────────────────────────────────────
     {
       name: 'stats',
       description: '[ADMIN] Afficher les statistiques complètes de PSG Dream League',
-      default_member_permissions: null,
+      default_member_permissions: '0',
+    },
+    // ── /transfert (V1) ───────────────────────────────────────────────────────
+    {
+      name: 'transfert',
+      description: '[STAFF] Transférer la collection et les coins d\'un membre vers un autre',
+      default_member_permissions: '0',
+      options: [
+        {
+          name:        'source',
+          description: 'Membre dont les données seront transférées (ancien compte)',
+          type:        ApplicationCommandOptionType.User,
+          required:    true,
+        },
+        {
+          name:        'cible',
+          description: 'Membre qui recevra les données (nouveau compte)',
+          type:        ApplicationCommandOptionType.User,
+          required:    true,
+        },
+      ],
+    },
+    // ── /simmatches ───────────────────────────────────────────────────────────
+    {
+      name: 'simmatches',
+      description: '[ADMIN] Simuler des matchs de test en masse dans un thread privé',
+      default_member_permissions: '0',
+      options: [
+        {
+          name:        'nombre',
+          description: 'Nombre de matchs à simuler (1-30, défaut: 10)',
+          type:        ApplicationCommandOptionType.Integer,
+          required:    false,
+          min_value:   1,
+          max_value:   30,
+        },
+      ],
+    },
+    // ── /statsmatch ───────────────────────────────────────────────────────────
+    {
+      name: 'statsmatch',
+      description: 'Voir les statistiques de match PSG Dream League',
+      options: [
+        {
+          name:        'classement',
+          description: 'Top 10 des joueurs (victoires, nuls, défaites, win rate)',
+          type:        ApplicationCommandOptionType.Subcommand,
+        },
+      ],
     },
   ];
 }

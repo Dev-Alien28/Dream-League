@@ -14,11 +14,13 @@ const {
 const {
   getMinigameChannel, setMinigameChannel, getNextMinigameTime,
   getGamingRoomMessages, addGamingRoomMessage, removeGamingRoomMessage,
+  getTeamRoomMessages, addTeamRoomMessage, removeTeamRoomMessage,
   getPackAnnounceChannel, setPackAnnounceChannel,
   getEncounterConfig, setEncounterConfig,
   formatIntervalMs, parseIntervalInput,
 } = require('../utils/database');
 const { sendGamingRoomEmbed } = require('./gaming_room');
+const { sendTeamRoomEmbed } = require('./team');
 const { PSG_BLUE, PSG_RED, PSG_FOOTER_ICON, MINIGAME_CONFIG } = require('../config/settings');
 
 // ─── Utilitaires ──────────────────────────────────────────────────────────────
@@ -79,13 +81,15 @@ function createMainEmbed(interaction) {
     .setDescription(`Bienvenue dans le panneau de configuration pour **${interaction.guild.name}**\n\nChoisis une catégorie :`)
     .setColor(PSG_BLUE)
     .addFields(
-      { name: '🕹️ Gaming Room',              value: "Définis les salons où l'embed principal sera envoyé (Boosters, Collection)",                   inline: false },
-      { name: '⚡ PSG Encounter',             value: "Définis le salon, l'intervalle et la fourchette horaire des Encounters",                       inline: false },
-      { name: '👑 Rôles Administrateurs',     value: 'Définis quels rôles peuvent utiliser `/addcoins`, `/removecoins`, `/setcoins`, `/give`',       inline: false },
-      { name: '🔧 Rôles de Configuration',    value: 'Définis quels rôles peuvent accéder à `/config`',                                             inline: false },
-      { name: "📣 Salon d'annonce packs",     value: 'Définis le salon où les ouvertures de packs/encounters/gives seront annoncées publiquement',   inline: false },
-      { name: '📋 Salon de Logs',             value: 'Définis où le bot enverra ses logs (achats packs, commandes admin, give, mini-jeu)',            inline: false },
-      { name: '🚫 Salons/Catégories Sans Coins', value: 'Définis les salons ou catégories où les membres ne gagnent pas de coins',                  inline: false },
+      { name: '🕹️ Gaming Room',                  value: "Définis les salons où l'embed Gaming Room sera envoyé",                                              inline: false },
+      { name: '⚽ Team Room',                     value: "Définis les salons où l'embed Team Room (Équipe & Match) sera envoyé",                               inline: false },
+      { name: '⚡ PSG Encounter',                 value: "Définis le salon, l'intervalle et la fourchette horaire des Encounters",                             inline: false },
+      { name: '⚔️ Salon Match',                   value: 'Définis le salon où les défis de match seront envoyés',                                              inline: false },
+      { name: '👑 Rôles Administrateurs',         value: 'Définis quels rôles peuvent utiliser `/addcoins`, `/removecoins`, `/setcoins`, `/give`',             inline: false },
+      { name: '🔧 Rôles de Configuration',        value: 'Définis quels rôles peuvent accéder à `/config`',                                                   inline: false },
+      { name: "📣 Salon d'annonce packs",         value: 'Définis le salon où les ouvertures de packs/encounters/gives seront annoncées publiquement',         inline: false },
+      { name: '📋 Salon de Logs',                 value: 'Définis où le bot enverra ses logs (achats packs, commandes admin, give, mini-jeu)',                 inline: false },
+      { name: '🚫 Salons/Catégories Sans Coins',  value: 'Définis les salons ou catégories où les membres ne gagnent pas de coins',                           inline: false },
     )
     .setFooter({ text: 'Paris Saint-Germain • Configuration', iconURL: PSG_FOOTER_ICON });
 }
@@ -94,13 +98,17 @@ function createMainComponents() {
   return [
     new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('config_gaming_room').setLabel('🕹️ Gaming Room').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('config_team_room').setLabel('⚽ Team Room').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId('config_encounter').setLabel('⚡ PSG Encounter').setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId('config_roles').setLabel('👑 Rôles Admins').setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId('config_roles_config').setLabel('🔧 Rôles Config').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('config_match_channel').setLabel('⚔️ Salon Match').setStyle(ButtonStyle.Primary),
     ),
     new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('config_roles').setLabel('👑 Rôles Admins').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('config_roles_config').setLabel('🔧 Rôles Config').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId('config_pack_announce').setLabel('📣 Annonce packs').setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId('config_logs').setLabel('📋 Salon de Logs').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('config_logs').setLabel('📋 Logs').setStyle(ButtonStyle.Primary),
+    ),
+    new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('config_no_coins').setLabel('🚫 Sans Coins').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId('config_view_full').setLabel('📊 Voir Config').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId('config_close').setLabel('❌ Fermer').setStyle(ButtonStyle.Danger),
@@ -138,6 +146,15 @@ async function safeReply(interaction, data) {
     if (interaction.deferred) return await interaction.editReply(data);
     return await interaction.reply({ ...data, flags: MessageFlags.Ephemeral });
   } catch (e) { console.error('⚠️ safeReply error:', e.message); }
+}
+
+// ─── Helper : convertit des ms en string saisissable (ex: 86400000 → "1j") ───
+
+function _msToInputString(ms) {
+  if (!ms) return '1j';
+  if (ms >= 86_400_000 && ms % 86_400_000 === 0) return `${ms / 86_400_000}j`;
+  if (ms >= 3_600_000  && ms % 3_600_000  === 0) return `${ms / 3_600_000}h`;
+  return `${Math.round(ms / 60_000)}m`;
 }
 
 // ─── Handler principal ────────────────────────────────────────────────────────
@@ -209,7 +226,66 @@ async function handleConfigInteraction(interaction) {
     return safeReply(interaction, { content: `✅ Gaming Room retiré${ch ? ` de ${ch}` : ''}` });
   }
 
-  // ==================== ⚡ PSG ENCOUNTER ====================
+  // ==================== ⚽ TEAM ROOM (V3) ====================
+  if (customId === 'config_team_room') {
+    const rooms    = getTeamRoomMessages(guildId);
+    const roomList = rooms.map(r => { const ch = guild.channels.cache.get(r.channelId); return ch ? ch.toString() : null; }).filter(Boolean);
+
+    const embed = new EmbedBuilder()
+      .setTitle('⚽ Team Room')
+      .setDescription(
+        "L'embed Team Room contient les boutons **Mon Équipe** et **Match**.\n"
+        + "Sélectionne un salon pour y envoyer l'embed, ou retire un salon existant.\n\n"
+        + `**Salons actifs :** ${roomList.length ? roomList.join(', ') : 'Aucun ❌'}`,
+      )
+      .setColor(PSG_BLUE)
+      .setFooter({ text: 'Tu peux avoir plusieurs salons Team Room simultanément', iconURL: PSG_FOOTER_ICON });
+
+    const addMenus    = buildSelectMenus(channelOptions(guild, 'tr__add__'),    'config_tr_add',    "➕ Envoyer l'embed dans un salon");
+    const removeOpts  = rooms
+      .map(r => { const ch = guild.channels.cache.get(r.channelId); return ch ? { label: `#${ch.name}`.slice(0, 100), value: `tr__remove__${r.channelId}`, description: 'Retirer cet embed' } : null; })
+      .filter(Boolean);
+    const removeMenus = buildSelectMenus(removeOpts, 'config_tr_remove', '➖ Retirer un salon Team Room');
+
+    return safeUpdate(interaction, { embeds: [embed], components: buildRows([...addMenus, ...removeMenus], 'config_back_main') });
+  }
+
+  if (customId.startsWith('config_tr_add_')) {
+    const channelId = interaction.values[0].replace('tr__add__', '');
+    const channel   = guild.channels.cache.get(channelId);
+    if (!channel) return safeReply(interaction, { content: '❌ Salon introuvable.' });
+
+    const existing = getTeamRoomMessages(guildId);
+    if (existing.some(r => r.channelId === channelId)) {
+      return safeReply(interaction, { content: `⚠️ Un embed Team Room existe déjà dans ${channel} !` });
+    }
+    try {
+      await interaction.deferUpdate();
+      const message = await sendTeamRoomEmbed(channel);
+      addTeamRoomMessage(guildId, channelId, message.id);
+      return await interaction.editReply({ content: `✅ Embed Team Room envoyé dans ${channel} !`, embeds: [], components: [] });
+    } catch (e) {
+      console.error('❌ Erreur envoi Team Room:', e.message);
+      return await interaction.editReply({ content: `❌ Impossible d'envoyer dans ${channel} — vérifie les permissions du bot.`, embeds: [], components: [] });
+    }
+  }
+
+  if (customId.startsWith('config_tr_remove_')) {
+    const channelId = interaction.values[0].replace('tr__remove__', '');
+    const rooms     = getTeamRoomMessages(guildId);
+    const room      = rooms.find(r => r.channelId === channelId);
+    if (room) {
+      try {
+        const ch = guild.channels.cache.get(channelId);
+        if (ch) { const msg = await ch.messages.fetch(room.messageId).catch(() => null); if (msg) await msg.delete().catch(() => {}); }
+      } catch { /* ok */ }
+      removeTeamRoomMessage(guildId, channelId);
+    }
+    const ch = guild.channels.cache.get(channelId);
+    return safeReply(interaction, { content: `✅ Team Room retiré${ch ? ` de ${ch}` : ''}` });
+  }
+
+  // ==================== ⚡ PSG ENCOUNTER (V2 — fourchette + modal) ====================
   if (customId === 'config_encounter') {
     const currentChannelId = getMinigameChannel(guildId);
     const currentChannel   = currentChannelId ? guild.channels.cache.get(currentChannelId) : null;
@@ -261,7 +337,7 @@ async function handleConfigInteraction(interaction) {
     return safeReply(interaction, { content: '✅ Salon Encounter retiré. Aucun Encounter ne sera spawné.' });
   }
 
-  // ── Sous-panneau : intervalle + fourchette horaire + timeout ──────────────
+  // ── Sous-panneau : intervalle + fourchette horaire + timeout (V2) ──────────
   if (customId === 'config_encounter_settings') {
     const { interval_min_ms, interval_max_ms, start_hour, end_hour, timeout_s } = getEncounterConfig(guildId);
 
@@ -298,21 +374,18 @@ async function handleConfigInteraction(interaction) {
 
     const rows = [
       // ✅ FIX : Bouton modal — NE PAS appeler deferUpdate/update avant showModal
-      // Ce bouton doit déclencher showModal() directement, sans aucun defer préalable
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId('config_enc_modal_open')
           .setLabel('✏️ Modifier intervalle & timeout')
           .setStyle(ButtonStyle.Success),
       ),
-      // Menu heure de début
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId('config_enc_start_0')
           .setPlaceholder('🕐 Heure de début de la fourchette horaire')
           .addOptions(START_HOURS),
       ),
-      // Menu heure de fin
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId('config_enc_end_0')
@@ -327,10 +400,9 @@ async function handleConfigInteraction(interaction) {
     return safeUpdate(interaction, { embeds: [embed], components: rows });
   }
 
-  // ── Ouverture du Modal de saisie libre ───────────────────────────────────
-  // ✅ FIX CRITIQUE : showModal() doit être la PREMIÈRE et UNIQUE réponse à cette interaction.
-  // Ne jamais appeler deferUpdate(), deferReply(), update() ou reply() avant showModal().
-  // handleConfigInteraction doit être appelé AVANT tout acknowledge dans le handler parent.
+  // ── Ouverture du Modal (V2) ───────────────────────────────────────────────
+  // ✅ FIX CRITIQUE : showModal() doit être la PREMIÈRE et UNIQUE réponse.
+  // Ne jamais appeler deferUpdate/deferReply/update/reply avant showModal().
   if (customId === 'config_enc_modal_open') {
     const { interval_min_ms, interval_max_ms, timeout_s } = getEncounterConfig(guildId);
 
@@ -372,11 +444,10 @@ async function handleConfigInteraction(interaction) {
       new ActionRowBuilder().addComponents(timeoutInput),
     );
 
-    // ✅ showModal() est la réponse directe — aucun defer avant
     return interaction.showModal(modal);
   }
 
-  // ── Traitement de la soumission du Modal ──────────────────────────────────
+  // ── Traitement soumission Modal (V2) ─────────────────────────────────────
   if (customId === 'config_enc_modal_submit') {
     const rawMin     = interaction.fields.getTextInputValue('enc_modal_min').trim();
     const rawMax     = interaction.fields.getTextInputValue('enc_modal_max').trim();
@@ -397,20 +468,17 @@ async function handleConfigInteraction(interaction) {
     if (isNaN(timeoutS) || timeoutS < 10 || timeoutS > 600) {
       errors.push(`❌ **Timeout invalide** : \`${rawTimeout}\`\nDois être un nombre entier entre **10** et **600** secondes`);
     }
-    // ✅ FIX : minMs === maxMs est valide (intervalle fixe), on accepte minMs <= maxMs
     if (minMs !== null && maxMs !== null && minMs > maxMs) {
       errors.push(`❌ **L'intervalle minimum** (\`${rawMin}\`) ne peut pas être supérieur au maximum (\`${rawMax}\`)`);
     }
 
     if (errors.length) {
       return interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle('⚠️ Erreur de saisie')
-            .setDescription(errors.join('\n\n'))
-            .setColor(PSG_RED)
-            .setFooter({ text: 'Corrige les valeurs et réessaie', iconURL: PSG_FOOTER_ICON }),
-        ],
+        embeds: [new EmbedBuilder()
+          .setTitle('⚠️ Erreur de saisie')
+          .setDescription(errors.join('\n\n'))
+          .setColor(PSG_RED)
+          .setFooter({ text: 'Corrige les valeurs et réessaie', iconURL: PSG_FOOTER_ICON })],
         flags: MessageFlags.Ephemeral,
       });
     }
@@ -425,20 +493,17 @@ async function handleConfigInteraction(interaction) {
       : `entre **${formatIntervalMs(minMs)}** et **${formatIntervalMs(maxMs)}**`;
 
     return interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('✅ Paramètres mis à jour !')
-          .setDescription(
-            `📅 **Intervalle :** ${intervalDisplay}\n`
-            + `⏱️ **Timeout :** ${timeoutS} secondes\n\n`
-            + (nextTime
-              ? `⏰ **Prochain Encounter :** <t:${Math.floor(nextTime.getTime() / 1000)}:F>\n`
-                + `(<t:${Math.floor(nextTime.getTime() / 1000)}:R>)`
-              : '⚠️ Aucun salon Encounter configuré — le prochain spawn sera planifié dès qu\'un salon sera défini.'),
-          )
-          .setColor(0xFFD700)
-          .setFooter({ text: 'Paris Saint-Germain • Encounter Settings', iconURL: PSG_FOOTER_ICON }),
-      ],
+      embeds: [new EmbedBuilder()
+        .setTitle('✅ Paramètres mis à jour !')
+        .setDescription(
+          `📅 **Intervalle :** ${intervalDisplay}\n`
+          + `⏱️ **Timeout :** ${timeoutS} secondes\n\n`
+          + (nextTime
+            ? `⏰ **Prochain Encounter :** <t:${Math.floor(nextTime.getTime() / 1000)}:F>\n(<t:${Math.floor(nextTime.getTime() / 1000)}:R>)`
+            : '⚠️ Aucun salon Encounter configuré — le prochain spawn sera planifié dès qu\'un salon sera défini.'),
+        )
+        .setColor(0xFFD700)
+        .setFooter({ text: 'Paris Saint-Germain • Encounter Settings', iconURL: PSG_FOOTER_ICON })],
       flags: MessageFlags.Ephemeral,
     });
   }
@@ -473,6 +538,46 @@ async function handleConfigInteraction(interaction) {
       content: `✅ **Heure de fin mise à jour : ${String(newEnd).padStart(2, '0')}h00**\n⏰ Prochain Encounter : <t:${Math.floor(nextTime.getTime() / 1000)}:F> (<t:${Math.floor(nextTime.getTime() / 1000)}:R>)`,
       embeds: [], components: [],
     });
+  }
+
+  // ==================== ⚔️ SALON MATCH (V3) ====================
+  if (customId === 'config_match_channel') {
+    const config    = loadServerConfig(guildId);
+    const matchChId = config?.match_channel || null;
+    const matchCh   = matchChId ? guild.channels.cache.get(matchChId) : null;
+
+    const embed = new EmbedBuilder()
+      .setTitle('⚔️ Salon Match')
+      .setDescription(
+        'Configure le salon où les **défis de match** seront envoyés.\n\n'
+        + 'Quand un joueur défie un adversaire, le message de défi apparaîtra dans ce salon.\n'
+        + 'Les matchs se dérouleront ensuite dans un **fil privé** créé automatiquement.',
+      )
+      .setColor(PSG_BLUE)
+      .addFields({ name: 'Salon actuel', value: matchCh ? matchCh.toString() : 'Non configuré ❌', inline: false })
+      .setFooter({ text: 'Paris Saint-Germain • Configuration', iconURL: PSG_FOOTER_ICON });
+
+    const setMenus   = buildSelectMenus(channelOptions(guild, 'match__set__'), 'config_match_set', '⚔️ Définir le salon match');
+    const disableBtn = new ButtonBuilder().setCustomId('config_match_disable').setLabel('🗑️ Désactiver').setStyle(ButtonStyle.Danger);
+
+    return safeUpdate(interaction, { embeds: [embed], components: buildRows(setMenus, 'config_back_main', [disableBtn]) });
+  }
+
+  if (customId.startsWith('config_match_set_')) {
+    await interaction.deferUpdate();
+    const channelId = interaction.values[0].replace('match__set__', '');
+    const config    = loadServerConfig(guildId) || {};
+    config.match_channel = channelId;
+    saveServerConfig(guildId, config);
+    const ch = guild.channels.cache.get(channelId);
+    return interaction.editReply({ content: `✅ ${ch} recevra maintenant les défis de match`, embeds: [], components: [] });
+  }
+
+  if (customId === 'config_match_disable') {
+    const config = loadServerConfig(guildId) || {};
+    config.match_channel = null;
+    saveServerConfig(guildId, config);
+    return safeReply(interaction, { content: '✅ Salon match désactivé' });
   }
 
   // ==================== 👑 RÔLES ADMIN ====================
@@ -670,6 +775,7 @@ async function handleConfigInteraction(interaction) {
       .setColor(PSG_BLUE)
       .setFooter({ text: 'Paris Saint-Germain', iconURL: PSG_FOOTER_ICON });
 
+    // Gaming Room
     const rooms = getGamingRoomMessages(guildId);
     embed.addFields({
       name:   '🕹️ Gaming Room',
@@ -677,6 +783,15 @@ async function handleConfigInteraction(interaction) {
       inline: false,
     });
 
+    // Team Room
+    const teamRoomsData = getTeamRoomMessages(guildId);
+    embed.addFields({
+      name:   '⚽ Team Room',
+      value:  teamRoomsData.map(r => guild.channels.cache.get(r.channelId)?.toString()).filter(Boolean).join('\n') || 'Non configuré ❌',
+      inline: false,
+    });
+
+    // Encounter
     const encId   = getMinigameChannel(guildId);
     const encCh   = encId ? guild.channels.cache.get(encId) : null;
     const encNext = encId ? getNextMinigameTime(guildId) : null;
@@ -692,6 +807,12 @@ async function handleConfigInteraction(interaction) {
       inline: false,
     });
 
+    // Salon Match
+    const matchChId = config?.match_channel || null;
+    const matchCh   = matchChId ? guild.channels.cache.get(matchChId) : null;
+    embed.addFields({ name: '⚔️ Salon Match', value: matchCh ? matchCh.toString() : 'Non configuré ❌', inline: true });
+
+    // Rôles admin
     const adminRoles = getAllowedRoles(guildId, 'admin').map(id => guild.roles.cache.get(id)?.toString()).filter(Boolean);
     embed.addFields({
       name:   '👑 Rôles Admin',
@@ -699,6 +820,7 @@ async function handleConfigInteraction(interaction) {
       inline: false,
     });
 
+    // Rôles config
     const configRoles = getAllowedRoles(guildId, 'config').map(id => guild.roles.cache.get(id)?.toString()).filter(Boolean);
     embed.addFields({
       name:   '🔧 Rôles Config',
@@ -706,13 +828,16 @@ async function handleConfigInteraction(interaction) {
       inline: false,
     });
 
+    // Logs
     const logsCh = config?.logs_channel ? guild.channels.cache.get(config.logs_channel) : null;
     embed.addFields({ name: '📋 Logs', value: logsCh ? logsCh.toString() : 'Non configuré ❌', inline: true });
 
+    // Annonce packs
     const announceChannelId = getPackAnnounceChannel(guildId);
     const announceChannel   = announceChannelId ? guild.channels.cache.get(announceChannelId) : null;
     embed.addFields({ name: '📣 Annonce packs', value: announceChannel ? announceChannel.toString() : 'Non configuré ❌', inline: true });
 
+    // Sans coins
     const noCoins = getNoCoinsChannels(guildId).map(id => guild.channels.cache.get(id)?.toString()).filter(Boolean);
     embed.addFields({
       name:   '🚫 Sans Coins',
@@ -720,6 +845,7 @@ async function handleConfigInteraction(interaction) {
       inline: true,
     });
 
+    // Catégories sans coins
     const noCats = (getNoCoinsCategories ? getNoCoinsCategories(guildId) : [])
       .map(id => { const c = guild.channels.cache.get(id); return c ? `📁 ${c.name}` : null; }).filter(Boolean);
     embed.addFields({
@@ -730,15 +856,6 @@ async function handleConfigInteraction(interaction) {
 
     return safeUpdate(interaction, { embeds: [embed], components: createMainComponents() });
   }
-}
-
-// ─── Helper : convertit des ms en string saisissable (ex: 86400000 → "1j") ──
-
-function _msToInputString(ms) {
-  if (!ms) return '1j';
-  if (ms >= 86_400_000 && ms % 86_400_000 === 0) return `${ms / 86_400_000}j`;
-  if (ms >= 3_600_000  && ms % 3_600_000  === 0) return `${ms / 3_600_000}h`;
-  return `${Math.round(ms / 60_000)}m`;
 }
 
 module.exports = { configCommand, handleConfigInteraction };

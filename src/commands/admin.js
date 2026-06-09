@@ -14,7 +14,7 @@ function buildFooter(guild) {
 
 // ─── Sessions de suppression (paginées) ───────────────────────────────────────
 const removeCardSessions = new Map();
-const CARDS_PER_PAGE = 25; // max Discord select menu
+const CARDS_PER_PAGE = 25;
 
 setInterval(() => {
   const now = Date.now();
@@ -23,7 +23,7 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers removecard ───────────────────────────────────────────────────────
 
 function buildRemoveCardEmbed(targetName, currentPage, totalPages, totalCards) {
   return new EmbedBuilder()
@@ -38,25 +38,23 @@ function buildRemoveCardEmbed(targetName, currentPage, totalPages, totalCards) {
 
 function buildRemoveCardComponents(session, adminId) {
   const { pages, currentPage } = session;
-  const pageCards = pages[currentPage];
+  const pageCards  = pages[currentPage];
   const totalPages = pages.length;
 
   const rows = [];
 
-  // Select menu avec les cartes de la page
   rows.push(new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId(`admin_removecard_select_${adminId}`)
       .setPlaceholder('🎴 Sélectionne une carte à supprimer...')
       .addOptions(pageCards.map(([collectionIndex, card]) => ({
-        label: `${card.nom} (${card.rareté})`.slice(0, 100),
+        label:       `${card.nom} (${card.rareté})`.slice(0, 100),
         description: `${CARD_TYPES[card.type]?.emoji || '🎴'} ${card.type} — Index #${collectionIndex}`.slice(0, 100),
-        value: String(collectionIndex),
-        emoji: getRarityEmoji(card.rareté),
+        value:       String(collectionIndex),
+        emoji:       getRarityEmoji(card.rareté),
       }))),
   ));
 
-  // Boutons pagination
   rows.push(new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`admin_removecard_prev_${adminId}`)
@@ -78,9 +76,8 @@ function buildRemoveCardComponents(session, adminId) {
 }
 
 function paginateCollection(collection) {
-  // Crée des pages de 25 cartes max avec leur index dans la collection originale
   const indexed = collection.map((card, index) => [index, card]);
-  const pages = [];
+  const pages   = [];
   for (let i = 0; i < indexed.length; i += CARDS_PER_PAGE) {
     pages.push(indexed.slice(i, i + CARDS_PER_PAGE));
   }
@@ -97,11 +94,11 @@ async function addCoinsCommand(interaction, membre, montant) {
     });
   }
 
-  const guildId = interaction.guildId;
-  const userId = membre.id;
-  const userData = getUserData(guildId, userId);
+  const guildId     = interaction.guildId;
+  const userId      = membre.id;
+  const userData    = getUserData(guildId, userId);
   const ancienSolde = userData.coins;
-  userData.coins += montant;
+  userData.coins   += montant;
   saveUserData(guildId, userId, userData);
 
   const embed = new EmbedBuilder()
@@ -109,7 +106,7 @@ async function addCoinsCommand(interaction, membre, montant) {
     .setDescription(`Tu as ajouté **${montant} PSG Coins** à ${membre}!`)
     .setColor(PSG_BLUE)
     .addFields(
-      { name: '💰 Ancien solde', value: `${ancienSolde} 🪙`, inline: true },
+      { name: '💰 Ancien solde',  value: `${ancienSolde} 🪙`,    inline: true },
       { name: '💎 Nouveau solde', value: `${userData.coins} 🪙`, inline: true },
     )
     .setFooter(buildFooter(interaction.guild));
@@ -126,12 +123,11 @@ async function removeCoinsCommand(interaction, membre, montant) {
     });
   }
 
-  const guildId = interaction.guildId;
-  const userId = membre.id;
-  const userData = getUserData(guildId, userId);
+  const guildId     = interaction.guildId;
+  const userId      = membre.id;
+  const userData    = getUserData(guildId, userId);
   const ancienSolde = userData.coins;
 
-  // Permet les valeurs négatives : le solde peut descendre en dessous de 0
   userData.coins -= montant;
   saveUserData(guildId, userId, userData);
 
@@ -140,7 +136,7 @@ async function removeCoinsCommand(interaction, membre, montant) {
     .setDescription(`Tu as retiré **${montant} PSG Coins** à ${membre}!`)
     .setColor(PSG_BLUE)
     .addFields(
-      { name: '💰 Ancien solde', value: `${ancienSolde} 🪙`, inline: true },
+      { name: '💰 Ancien solde',  value: `${ancienSolde} 🪙`,    inline: true },
       { name: '💎 Nouveau solde', value: `${userData.coins} 🪙`, inline: true },
     )
     .setFooter(buildFooter(interaction.guild));
@@ -157,11 +153,11 @@ async function setCoinsCommand(interaction, membre, montant) {
     });
   }
 
-  const guildId = interaction.guildId;
-  const userId = membre.id;
-  const userData = getUserData(guildId, userId);
+  const guildId     = interaction.guildId;
+  const userId      = membre.id;
+  const userData    = getUserData(guildId, userId);
   const ancienSolde = userData.coins;
-  userData.coins = montant;
+  userData.coins    = montant;
   saveUserData(guildId, userId, userData);
 
   const embed = new EmbedBuilder()
@@ -169,8 +165,8 @@ async function setCoinsCommand(interaction, membre, montant) {
     .setDescription(`Tu as défini le solde de ${membre} à **${montant} PSG Coins** sur ce serveur!`)
     .setColor(PSG_BLUE)
     .addFields(
-      { name: '💰 Ancien solde', value: `${ancienSolde} 🪙`, inline: true },
-      { name: '💎 Nouveau solde', value: `${montant} 🪙`, inline: true },
+      { name: '💰 Ancien solde',  value: `${ancienSolde} 🪙`, inline: true },
+      { name: '💎 Nouveau solde', value: `${montant} 🪙`,     inline: true },
     )
     .setFooter(buildFooter(interaction.guild));
 
@@ -195,9 +191,9 @@ async function removeCardCommand(interaction, membre) {
     });
   }
 
-  const guildId = interaction.guildId;
-  const adminId = interaction.user.id;
-  const userData = getUserData(guildId, membre.id);
+  const guildId    = interaction.guildId;
+  const adminId    = interaction.user.id;
+  const userData   = getUserData(guildId, membre.id);
   const collection = userData.collection || [];
 
   if (!collection.length) {
@@ -210,7 +206,7 @@ async function removeCardCommand(interaction, membre) {
     });
   }
 
-  const pages = paginateCollection(collection);
+  const pages      = paginateCollection(collection);
   const targetName = membre.displayName || membre.user.username;
 
   removeCardSessions.set(adminId, {
@@ -219,10 +215,10 @@ async function removeCardCommand(interaction, membre) {
     targetName,
     pages,
     currentPage: 0,
-    expireAt: Date.now() + 15 * 60 * 1000,
+    expireAt:    Date.now() + 15 * 60 * 1000,
   });
 
-  const embed = buildRemoveCardEmbed(targetName, 0, pages.length, collection.length);
+  const embed      = buildRemoveCardEmbed(targetName, 0, pages.length, collection.length);
   const components = buildRemoveCardComponents(removeCardSessions.get(adminId), adminId);
 
   return interaction.reply({ embeds: [embed], components, flags: MessageFlags.Ephemeral });
@@ -232,9 +228,8 @@ async function removeCardCommand(interaction, membre) {
 
 async function handleRemoveCardInteraction(interaction) {
   const customId = interaction.customId;
-  const adminId = customId.split('_').pop();
+  const adminId  = customId.split('_').pop();
 
-  // Vérification que c'est bien l'admin qui a ouvert la session
   if (interaction.user.id !== adminId) {
     return interaction.reply({ content: "❌ Ce n'est pas ta session !", flags: MessageFlags.Ephemeral });
   }
@@ -269,9 +264,9 @@ async function handleRemoveCardInteraction(interaction) {
   // ── Sélection d'une carte ─────────────────────────────────────────────────
   if (customId.startsWith('admin_removecard_select_')) {
     const collectionIndex = parseInt(interaction.values[0], 10);
-    const userData = getUserData(session.guildId, session.targetUserId);
-    const collection = userData.collection || [];
-    const card = collection[collectionIndex];
+    const userData        = getUserData(session.guildId, session.targetUserId);
+    const collection      = userData.collection || [];
+    const card            = collection[collectionIndex];
 
     if (!card) {
       return interaction.update({
@@ -280,7 +275,6 @@ async function handleRemoveCardInteraction(interaction) {
       });
     }
 
-    // Suppression
     collection.splice(collectionIndex, 1);
     userData.collection = collection;
     saveUserData(session.guildId, session.targetUserId, userData);
@@ -292,9 +286,9 @@ async function handleRemoveCardInteraction(interaction) {
         .setDescription(`La carte **${card.nom}** a été retirée de la collection de **${session.targetName}**.`)
         .setColor(PSG_BLUE)
         .addFields(
-          { name: '🎴 Carte', value: card.nom, inline: true },
-          { name: '🏆 Rareté', value: `${getRarityEmoji(card.rareté)} ${card.rareté}`, inline: true },
-          { name: '📦 Collection restante', value: `${userData.collection.length} carte(s)`, inline: true },
+          { name: '🎴 Carte',               value: card.nom,                                           inline: true },
+          { name: '🏆 Rareté',              value: `${getRarityEmoji(card.rareté)} ${card.rareté}`,   inline: true },
+          { name: '📦 Collection restante', value: `${userData.collection.length} carte(s)`,           inline: true },
         )
         .setFooter({ text: `Retiré par ${interaction.user.displayName} • Paris Saint-Germain`, iconURL: PSG_LOGO })],
       components: [],

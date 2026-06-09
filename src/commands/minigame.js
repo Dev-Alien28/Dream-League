@@ -88,10 +88,10 @@ async function announceEncounterWin(guild, winner, card, guildId) {
   const announceChannel = guild.channels.cache.get(String(announceChannelId));
   if (!announceChannel) return null;
 
-  const userData      = getUserData(guildId, winner.id);
-  const cardCopies    = userData.collection.filter(c => c.nom === card.nom && c.rareté === card.rareté).length;
+  const userData       = getUserData(guildId, winner.id);
+  const cardCopies     = userData.collection.filter(c => c.nom === card.nom && c.rareté === card.rareté).length;
   const collectionSize = userData.collection.length;
-  const typeEmoji     = CARD_TYPES[card.type]?.emoji || '🎴';
+  const typeEmoji      = CARD_TYPES[card.type]?.emoji || '🎴';
 
   const embed = new EmbedBuilder()
     .setTitle('⚡ ENCOUNTER REMPORTÉ !')
@@ -116,14 +116,17 @@ async function announceEncounterWin(guild, winner, card, guildId) {
     if (attachment) {
       embed.setImage(`attachment://${attachment.name}`);
       const sentMsg = await announceChannel.send({ content: `🎉 ${winner}`, embeds: [embed], files: [attachment] });
+      setTimeout(() => sentMsg.delete().catch(() => {}), 120_000);
       const att = sentMsg.attachments.first();
       if (att) cdnImageUrl = att.url;
     } else if (imageUrl) {
       embed.setImage(imageUrl);
-      await announceChannel.send({ content: `🎉 ${winner}`, embeds: [embed] });
+      const sentMsg = await announceChannel.send({ content: `🎉 ${winner}`, embeds: [embed] });
+      setTimeout(() => sentMsg.delete().catch(() => {}), 120_000);
       cdnImageUrl = imageUrl;
     } else {
-      await announceChannel.send({ content: `🎉 ${winner}`, embeds: [embed] });
+      const sentMsg = await announceChannel.send({ content: `🎉 ${winner}`, embeds: [embed] });
+      setTimeout(() => sentMsg.delete().catch(() => {}), 120_000);
     }
   } catch (e) {
     console.error('❌ Erreur annonce Encounter:', e.message);

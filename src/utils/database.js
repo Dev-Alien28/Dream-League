@@ -1,9 +1,17 @@
-// src/utils/database.js - Base de données Enmap (SQLite)
+// src/utils/database.js - Base de données Enmap (SQLite) — V5
+// CHANGEMENTS V5 :
+//   - Format équipe migré vers { squads: [...], activeSquad: 0 }
+//   - getActiveTeam() helper retournant le squad actif
+//   - Migration automatique de l'ancien format (teamData.titulaires) vers le nouveau
+//   - starter_pack désormais accordé à la création d'équipe (flag claimedStarterPack sur user)
+
 const { default: Enmap } = require('enmap');
 const fs = require('fs');
 const path = require('path');
 const {
-  DATA_DIR, PACKS_DIR, PACKS_CONFIG, MINIGAME_CONFIG, COINS_ON_JOIN,
+  DATA_DIR, PACKS_DIR, PACKS_CONFIG, COINS_ON_JOIN,
+  DEFAULT_ENCOUNTER_INTERVAL_MIN_MS, DEFAULT_ENCOUNTER_INTERVAL_MAX_MS,
+  DEFAULT_ENCOUNTER_START_HOUR, DEFAULT_ENCOUNTER_END_HOUR, DEFAULT_ENCOUNTER_TIMEOUT_S,
 } = require('../config/settings');
 
 // ==================== CRÉATION DES DOSSIERS AVANT ENMAP ====================
@@ -13,12 +21,16 @@ fs.mkdirSync(PACKS_DIR, { recursive: true });
 
 // ==================== ENMAPS ====================
 
-const users       = new Enmap({ name: 'users',        dataDir: path.join(DATA_DIR, 'enmap'), ensureProps: true });
-const events      = new Enmap({ name: 'events',        dataDir: path.join(DATA_DIR, 'enmap') });
-const reminders   = new Enmap({ name: 'reminders',     dataDir: path.join(DATA_DIR, 'enmap') });
-const servers     = new Enmap({ name: 'servers',        dataDir: path.join(DATA_DIR, 'enmap') });
-const gamingRooms = new Enmap({ name: 'gaming_rooms',  dataDir: path.join(DATA_DIR, 'enmap') });
-const statsDb     = new Enmap({ name: 'stats',          dataDir: path.join(DATA_DIR, 'enmap') });
+const users        = new Enmap({ name: 'users',        dataDir: path.join(DATA_DIR, 'enmap'), ensureProps: true });
+const events       = new Enmap({ name: 'events',        dataDir: path.join(DATA_DIR, 'enmap') });
+const reminders    = new Enmap({ name: 'reminders',     dataDir: path.join(DATA_DIR, 'enmap') });
+const servers      = new Enmap({ name: 'servers',        dataDir: path.join(DATA_DIR, 'enmap') });
+const gamingRooms  = new Enmap({ name: 'gaming_rooms',  dataDir: path.join(DATA_DIR, 'enmap') });
+const statsDb      = new Enmap({ name: 'stats',          dataDir: path.join(DATA_DIR, 'enmap') });
+const teams        = new Enmap({ name: 'teams',          dataDir: path.join(DATA_DIR, 'enmap') });
+const matchHistory = new Enmap({ name: 'matchHistory',  dataDir: path.join(DATA_DIR, 'enmap') });
+const matchStats   = new Enmap({ name: 'matchStats',    dataDir: path.join(DATA_DIR, 'enmap') });
+const teamRooms    = new Enmap({ name: 'team_rooms',    dataDir: path.join(DATA_DIR, 'enmap') });
 
 // ==================== INITIALISATION ====================
 
@@ -36,13 +48,24 @@ function userKey(guildId, userId) { return `${guildId}:${userId}`; }
 // ==================== UTILISATEURS ====================
 
 function initUser() {
-  return { coins: COINS_ON_JOIN, messages: 0, collection: [], last_free_pack: null };
+  return {
+    coins: COINS_ON_JOIN,
+    messages: 0,
+    collection: [],
+    last_free_pack: null,
+    claimedStarterPack: false,   // V5 — starter pack accordé à la création d'équipe
+  };
 }
 
 function getUserData(guildId, userId) {
   const key = userKey(guildId, userId);
   if (!users.has(key)) users.set(key, initUser());
-  return users.get(key);
+  const data = users.get(key);
+  // Rétrocompat : ajouter le champ si absent
+  if (data.claimedStarterPack === undefined) {
+    data.claimedStarterPack = false;
+  }
+  return data;
 }
 
 function saveUserData(guildId, userId, userData) {
@@ -75,9 +98,9 @@ function removeCoins(guildId, userId, amount) {
 }
 
 function getUserCardsGrouped(guildId, userId) {
-  const userData = getUserData(guildId, userId);
+  const userData   = getUserData(guildId, userId);
   const collection = userData.collection || [];
-  const cardCount = {};
+  const cardCount  = {};
   for (const card of collection) {
     if (!cardCount[card.id]) cardCount[card.id] = { card, count: 0 };
     cardCount[card.id].count++;
@@ -133,16 +156,8 @@ function getFreePackCooldown(guildId, userId) {
   return Math.max(0, Math.floor((PACKS_CONFIG.free_pack.cooldown * 1000 - elapsed) / 1000));
 }
 
-// ==================== STATISTIQUES ====================
+// ==================== STATISTIQUES (V2) ====================
 
-/**
- * Retourne l'objet stats complet pour une guild.
- * Structure :
- *   pack_purchases : [{ ts, userId, packKey, price, cardName, cardRarity }]
- *   failed_purchases: [{ ts, userId, packKey, price, userCoins }]
- *   encounter_wins  : [{ ts, userId, cardName, cardRarity }]
- *   give_events     : [{ ts, adminId, userId, cardName, cardRarity }]
- */
 function getStatsData(guildId) {
   const key = `stats_${guildId}`;
   if (!statsDb.has(key)) {
@@ -160,7 +175,6 @@ function _saveStatsData(guildId, data) {
   statsDb.set(`stats_${guildId}`, data);
 }
 
-/** Enregistre un achat de pack réussi. */
 function recordPackPurchase(guildId, userId, packKey, price, cardName, cardRarity) {
   const data = getStatsData(guildId);
   data.pack_purchases.push({
@@ -174,7 +188,6 @@ function recordPackPurchase(guildId, userId, packKey, price, cardName, cardRarit
   _saveStatsData(guildId, data);
 }
 
-/** Enregistre une tentative d'achat échouée (coins insuffisants). */
 function recordFailedPurchase(guildId, userId, packKey, requiredPrice, userCoins) {
   const data = getStatsData(guildId);
   data.failed_purchases.push({
@@ -187,7 +200,6 @@ function recordFailedPurchase(guildId, userId, packKey, requiredPrice, userCoins
   _saveStatsData(guildId, data);
 }
 
-/** Enregistre une victoire d'Encounter. */
 function recordEncounterWin(guildId, userId, cardName, cardRarity) {
   const data = getStatsData(guildId);
   data.encounter_wins.push({
@@ -199,7 +211,6 @@ function recordEncounterWin(guildId, userId, cardName, cardRarity) {
   _saveStatsData(guildId, data);
 }
 
-/** Enregistre un give de carte (admin). */
 function recordGiveEvent(guildId, adminId, userId, cardName, cardRarity) {
   const data = getStatsData(guildId);
   data.give_events.push({
@@ -220,14 +231,6 @@ function saveEventState(state) {
   for (const [k, v] of Object.entries(state)) events.set(k, v);
 }
 
-// ── Config Encounter ─────────────────────────────────────────────────────────
-
-const DEFAULT_INTERVAL_MIN_MS = 86_400_000;
-const DEFAULT_INTERVAL_MAX_MS = 86_400_000;
-const DEFAULT_START_HOUR      = 8;
-const DEFAULT_END_HOUR        = 23;
-const DEFAULT_TIMEOUT_S       = 60;
-
 function getEncounterConfig(guildId) {
   const state = events.get(`minigame_${guildId}`) || {};
 
@@ -239,17 +242,17 @@ function getEncounterConfig(guildId) {
   }
 
   return {
-    interval_min_ms: minMs  ?? DEFAULT_INTERVAL_MIN_MS,
-    interval_max_ms: maxMs  ?? DEFAULT_INTERVAL_MAX_MS,
-    start_hour:      state.start_hour  ?? DEFAULT_START_HOUR,
-    end_hour:        state.end_hour    ?? DEFAULT_END_HOUR,
-    timeout_s:       state.timeout_s   ?? DEFAULT_TIMEOUT_S,
+    interval_min_ms: minMs  ?? DEFAULT_ENCOUNTER_INTERVAL_MIN_MS,
+    interval_max_ms: maxMs  ?? DEFAULT_ENCOUNTER_INTERVAL_MAX_MS,
+    start_hour:      state.start_hour  ?? DEFAULT_ENCOUNTER_START_HOUR,
+    end_hour:        state.end_hour    ?? DEFAULT_ENCOUNTER_END_HOUR,
+    timeout_s:       state.timeout_s   ?? DEFAULT_ENCOUNTER_TIMEOUT_S,
   };
 }
 
 function setEncounterConfig(guildId, { interval_min_ms, interval_max_ms, start_hour, end_hour, timeout_s }) {
   const guildKey = `minigame_${guildId}`;
-  const state = events.get(guildKey) || {};
+  const state    = events.get(guildKey) || {};
 
   if (interval_min_ms !== undefined) state.interval_min_ms = interval_min_ms;
   if (interval_max_ms !== undefined) state.interval_max_ms = interval_max_ms;
@@ -268,8 +271,6 @@ function setEncounterConfig(guildId, { interval_min_ms, interval_max_ms, start_h
   const { interval_min_ms: min, interval_max_ms: max } = getEncounterConfig(guildId);
   console.log(`✅ Encounter config mise à jour pour ${guildId} — fourchette: ${formatIntervalMs(min)}–${formatIntervalMs(max)} — prochain spawn: ${nextTime.toISOString()}`);
 }
-
-// ─── Formatage ────────────────────────────────────────────────────────────────
 
 function formatIntervalMs(ms) {
   if (ms >= 86_400_000 && ms % 86_400_000 === 0) return `${ms / 86_400_000} jour(s)`;
@@ -297,8 +298,6 @@ function parseIntervalInput(raw) {
   return null;
 }
 
-// ─── Calcul du prochain spawn ─────────────────────────────────────────────────
-
 function _computeNextSpawn(guildId, fromDate) {
   const { interval_min_ms, interval_max_ms, start_hour, end_hour } = getEncounterConfig(guildId);
   const from = fromDate || new Date();
@@ -314,12 +313,10 @@ function _computeNextSpawn(guildId, fromDate) {
     return candidate;
   }
 
-  const base = new Date(from.getTime() + interval_ms);
-
-  const randomHour = start_hour + Math.floor(Math.random() * (end_hour - start_hour));
-  const randomMin  = Math.floor(Math.random() * 60);
-
-  const candidate = new Date(base);
+  const base        = new Date(from.getTime() + interval_ms);
+  const randomHour  = start_hour + Math.floor(Math.random() * (end_hour - start_hour));
+  const randomMin   = Math.floor(Math.random() * 60);
+  const candidate   = new Date(base);
   candidate.setHours(randomHour, randomMin, 0, 0);
 
   const futureThreshold = new Date(now.getTime() + 1000);
@@ -332,7 +329,7 @@ function _computeNextSpawn(guildId, fromDate) {
 
 function getNextMinigameTime(guildId) {
   const guildKey = `minigame_${guildId}`;
-  const state = events.get(guildKey);
+  const state    = events.get(guildKey);
   if (!state?.next_spawn) {
     const nextTime = _computeNextSpawn(guildId, new Date());
     events.set(guildKey, { ...(state || {}), next_spawn: nextTime.toISOString(), last_spawn: null });
@@ -364,7 +361,7 @@ function setMinigameChannel(guildId, channelId) {
   events.set(guildKey, state);
 }
 
-// ==================== GAMING ROOM (messages embed) ====================
+// ==================== GAMING ROOM ====================
 
 function getGamingRoomMessages(guildId) {
   return gamingRooms.get(String(guildId)) || [];
@@ -382,18 +379,37 @@ function removeGamingRoomMessage(guildId, channelId) {
   gamingRooms.set(String(guildId), filtered);
 }
 
+// ==================== TEAM ROOM ====================
+
+function getTeamRoomMessages(guildId) {
+  return teamRooms.get(String(guildId)) || [];
+}
+
+function addTeamRoomMessage(guildId, channelId, messageId) {
+  const list = getTeamRoomMessages(guildId);
+  list.push({ channelId: String(channelId), messageId: String(messageId) });
+  teamRooms.set(String(guildId), list);
+}
+
+function removeTeamRoomMessage(guildId, channelId) {
+  const list     = getTeamRoomMessages(guildId);
+  const filtered = list.filter(m => m.channelId !== String(channelId));
+  teamRooms.set(String(guildId), filtered);
+}
+
 // ==================== CONFIGS SERVEUR ====================
 
 function initServerConfig(guildId, guildName) {
   if (!servers.has(String(guildId))) {
     servers.set(String(guildId), {
-      guild_id:   guildId,
-      guild_name: guildName,
-      channels:   { solde: [], packs: [], collection: [] },
-      roles:      { admin: [], moderator: [], config: [] },
+      guild_id:            guildId,
+      guild_name:          guildName,
+      channels:            { solde: [], packs: [], collection: [] },
+      roles:               { admin: [], moderator: [], config: [] },
       no_coins_channels:   [],
       no_coins_categories: [],
-      logs_channel: null,
+      logs_channel:        null,
+      match_channel:       null,
     });
     console.log(`✅ Config serveur initialisée pour ${guildName} (${guildId})`);
   }
@@ -417,7 +433,7 @@ function setPackAnnounceChannel(guildId, channelId) {
   servers.set(String(guildId), config);
 }
 
-// ==================== RAPPELS AUTOMATIQUES ====================
+// ==================== RAPPELS ====================
 
 function initReminderGuild(guildId) {
   if (!reminders.has(String(guildId))) {
@@ -440,10 +456,141 @@ function getAllReminderConfigs() {
 
 function deleteReminderConfig(guildId) { reminders.delete(String(guildId)); }
 
+// ==================== STATS DE MATCH ====================
+
+function getMatchStats(guildId, userId) {
+  const key = `${guildId}:${userId}`;
+  if (!matchStats.has(key)) {
+    matchStats.set(key, { played: 0, won: 0, drawn: 0, lost: 0 });
+  }
+  return matchStats.get(key);
+}
+
+function _saveMatchStats(guildId, userId, data) {
+  matchStats.set(`${guildId}:${userId}`, data);
+}
+
+function recordMatchResult(guildId, winnerUserId, loserUserId, drawUserIdA = null, drawUserIdB = null) {
+  if (winnerUserId && loserUserId) {
+    const winner = getMatchStats(guildId, winnerUserId);
+    winner.played++;
+    winner.won++;
+    _saveMatchStats(guildId, winnerUserId, winner);
+
+    const loser = getMatchStats(guildId, loserUserId);
+    loser.played++;
+    loser.lost++;
+    _saveMatchStats(guildId, loserUserId, loser);
+  } else if (drawUserIdA && drawUserIdB) {
+    for (const uid of [drawUserIdA, drawUserIdB]) {
+      const s = getMatchStats(guildId, uid);
+      s.played++;
+      s.drawn++;
+      _saveMatchStats(guildId, uid, s);
+    }
+  }
+}
+
+// ==================== MATCH DAILY LIMIT ====================
+
+function getMatchDailyCount(guildId, userId) {
+  const key      = `daily_${guildId}:${userId}`;
+  const entry    = matchHistory.get(key);
+  if (!entry) return 0;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (entry.date !== todayStr) return 0;
+  return entry.count || 0;
+}
+
+function incrementMatchDailyCount(guildId, userId) {
+  const key      = `daily_${guildId}:${userId}`;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const entry    = matchHistory.get(key) || {};
+
+  if (entry.date !== todayStr) {
+    matchHistory.set(key, { date: todayStr, count: 1 });
+  } else {
+    matchHistory.set(key, { date: todayStr, count: (entry.count || 0) + 1 });
+  }
+}
+
+// ==================== ÉQUIPES (V5 — multi-squad) ====================
+
+/**
+ * Format stocké V5 :
+ * {
+ *   squads: [
+ *     { name: 'Équipe 1', formation, titulaires, remplacants, updatedAt } | null,
+ *     { name: 'Équipe 2', ... } | null,
+ *     { name: 'Équipe 3', ... } | null,
+ *   ],
+ *   activeSquad: 0   // index 0, 1 ou 2
+ * }
+ *
+ * Migration automatique : si l'ancien format (teamData.titulaires directement) est détecté,
+ * il est automatiquement converti en nouveau format lors de la lecture.
+ */
+function getTeamData(guildId, userId) {
+  const raw = teams.get(`${guildId}:${userId}`);
+  if (!raw) return { squads: [null, null, null], activeSquad: 0 };
+
+  // Migration : ancien format plat → nouveau format multi-squad
+  if (raw.titulaires && !raw.squads) {
+    const migrated = {
+      squads: [
+        {
+          name:        'Équipe 1',
+          formation:   raw.formation,
+          titulaires:  raw.titulaires,
+          remplacants: raw.remplacants || [],
+          updatedAt:   raw.updatedAt || new Date().toISOString(),
+        },
+        null,
+        null,
+      ],
+      activeSquad: 0,
+    };
+    // Sauvegarder la migration directement
+    teams.set(`${guildId}:${userId}`, migrated);
+    return migrated;
+  }
+
+  // S'assurer que squads est toujours un tableau de 3 éléments
+  if (!raw.squads) raw.squads = [null, null, null];
+  while (raw.squads.length < 3) raw.squads.push(null);
+  if (raw.activeSquad === undefined) raw.activeSquad = 0;
+
+  return raw;
+}
+
+function saveTeamData(guildId, userId, teamData) {
+  teams.set(`${guildId}:${userId}`, teamData);
+}
+
+/**
+ * Retourne directement le squad actif (ancien comportement attendu par match.js).
+ * Retourne null si aucun squad actif n'existe.
+ */
+function getActiveTeam(guildId, userId) {
+  const td = getTeamData(guildId, userId);
+  const squad = td.squads[td.activeSquad] ?? null;
+  return squad;
+}
+
+// ==================== MATCH COOLDOWN ====================
+
+function getMatchCooldown(guildId, userId) {
+  return matchHistory.get(`cd_${guildId}:${userId}`) || null;
+}
+
+function setMatchCooldown(guildId, userId) {
+  matchHistory.set(`cd_${guildId}:${userId}`, Date.now());
+}
+
 // ==================== EXPORTS ====================
 
 module.exports = {
-  users, events, reminders, servers, gamingRooms, statsDb,
+  users, events, reminders, servers, gamingRooms, statsDb, teams, matchHistory, matchStats, teamRooms,
   initFiles,
   getUserData, saveUserData, getGuildData, addCardToUser, removeCoins, getUserCardsGrouped,
   loadPackCards, loadAllCards, findCardById,
@@ -454,9 +601,13 @@ module.exports = {
   getNextMinigameTime, scheduleNextMinigame,
   getMinigameChannel, setMinigameChannel,
   getGamingRoomMessages, addGamingRoomMessage, removeGamingRoomMessage,
+  getTeamRoomMessages, addTeamRoomMessage, removeTeamRoomMessage,
   getPackAnnounceChannel, setPackAnnounceChannel,
   initServerConfig, loadServerConfig, saveServerConfig,
   initReminderGuild, getReminderConfig, setReminderConfig, getAllReminderConfigs, deleteReminderConfig,
-  // Stats
+  getTeamData, saveTeamData, getActiveTeam,
+  getMatchCooldown, setMatchCooldown,
   getStatsData, recordPackPurchase, recordFailedPurchase, recordEncounterWin, recordGiveEvent,
+  getMatchStats, recordMatchResult,
+  getMatchDailyCount, incrementMatchDailyCount,
 };
