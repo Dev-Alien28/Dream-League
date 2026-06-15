@@ -5,7 +5,7 @@
 //   - Migration automatique de l'ancien format (teamData.titulaires) vers le nouveau
 //   - starter_pack désormais accordé à la création d'équipe (flag claimedStarterPack sur user)
 
-const { default: Enmap } = require('enmap');
+const Enmap = require('enmap');
 const fs = require('fs');
 const path = require('path');
 const {

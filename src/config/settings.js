@@ -136,7 +136,7 @@ const PACKS_CONFIG = {
   },
   edf_psg: {
     nom: 'EDF X PSG',
-    prix: 150,
+    prix: 80,
     description: "Dans ce set, retrouvez tous les joueurs du PSG ayant déjà participé à une Coupe du Monde avec l'équipe de France. Avec notamment la toute première carte Legend du jeu : Kylian Mbappé ! Mais ce n'est pas tout, de nombreux autres joueurs emblématiques sont également à collectionner.",
     fichier: 'pack_edf_psg.json',
     emoji: '🐔',
